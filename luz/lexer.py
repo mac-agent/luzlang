@@ -113,6 +113,9 @@ class Lexer:
             elif self.current_char == ')':
                 tokens.append(Token(TokenType.RPAREN))
                 self.advance()
+            elif self.current_char == ',':
+                tokens.append(Token(TokenType.COMMA))
+                self.advance()
             elif self.current_char == '{':
                 tokens.append(Token(TokenType.LBRACE))
                 self.advance()

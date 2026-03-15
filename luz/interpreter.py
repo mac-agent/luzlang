@@ -3,6 +3,9 @@ from .tokens import TokenType
 class Interpreter:
     def __init__(self):
         self.symbol_table = {}
+        self.builtins = {
+            'write': self.builtin_write
+        }
 
     def visit(self, node):
         if isinstance(node, list):
@@ -80,3 +83,16 @@ class Interpreter:
             return self.visit(node.else_case)
         
         return 0.0
+
+    def visit_CallNode(self, node):
+        func_name = node.func_name_token.value
+        args = [self.visit(arg) for arg in node.arguments]
+
+        if func_name in self.builtins:
+            return self.builtins[func_name](*args)
+        
+        raise Exception(f"Función '{func_name}' no definida")
+
+    def builtin_write(self, *args):
+        print(*args)
+        return None

@@ -21,7 +21,8 @@ def main():
             ast = parser.parse()
             
             result = interpreter.visit(ast)
-            print(result)
+            if result is not None:
+                print(result)
             
         except Exception as e:
             print(f"Error: {e}")

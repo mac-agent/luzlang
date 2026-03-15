@@ -20,6 +20,7 @@ class TokenType(Enum):
     ELIF = auto()
     ELSE = auto()
     STRING = auto()
+    COMMA = auto()       # ,
     LBRACE = auto()      # {
     RBRACE = auto()      # }
     EOF = auto()

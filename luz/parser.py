@@ -33,6 +33,12 @@ class IfNode:
         self.cases = cases # List of (condition, block)
         self.else_case = else_case # Block
 
+class CallNode:
+    def __init__(self, func_name_token, arguments):
+        self.func_name_token = func_name_token
+        self.arguments = arguments
+    def __repr__(self): return f"{self.func_name_token.value}({self.arguments})"
+
 class Parser:
     def __init__(self, tokens):
         self.tokens = tokens
@@ -132,8 +138,23 @@ class Parser:
             self.advance()
             return StringNode(token)
         elif token.type == TokenType.IDENTIFIER:
+            func_name = token
             self.advance()
-            return VarAccessNode(token)
+            if self.current_token.type == TokenType.LPAREN:
+                self.advance()
+                args = []
+                if self.current_token.type != TokenType.RPAREN:
+                    args.append(self.expr())
+                    while self.current_token.type == TokenType.COMMA:
+                        self.advance()
+                        args.append(self.expr())
+                
+                if self.current_token.type != TokenType.RPAREN:
+                    raise Exception("Esperado ',' o ')'")
+                self.advance()
+                return CallNode(func_name, args)
+            else:
+                return VarAccessNode(func_name)
         elif token.type == TokenType.LPAREN:
             self.advance()
             expr = self.expr()
