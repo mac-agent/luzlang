@@ -22,6 +22,8 @@ class TokenType(Enum):
     WHILE = auto()
     FOR = auto()
     TO = auto()
+    TRUE = auto()
+    FALSE = auto()
     STRING = auto()
     COMMA = auto()       # ,
     LBRACE = auto()      # {

@@ -28,6 +28,9 @@ class Interpreter:
     def visit_StringNode(self, node):
         return node.token.value
 
+    def visit_BooleanNode(self, node):
+        return True if node.token.type == TokenType.TRUE else False
+
     def visit_VarAssignNode(self, node):
         var_name = node.var_name_token.value
         value = self.visit(node.value_node)
@@ -63,17 +66,17 @@ class Interpreter:
                 raise Exception("Error: División por cero")
             return left / right
         elif node.op_token.type == TokenType.EE:
-            return 1.0 if left == right else 0.0
+            return left == right
         elif node.op_token.type == TokenType.NE:
-            return 1.0 if left != right else 0.0
+            return left != right
         elif node.op_token.type == TokenType.LT:
-            return 1.0 if left < right else 0.0
+            return left < right
         elif node.op_token.type == TokenType.GT:
-            return 1.0 if left > right else 0.0
+            return left > right
         elif node.op_token.type == TokenType.LTE:
-            return 1.0 if left <= right else 0.0
+            return left <= right
         elif node.op_token.type == TokenType.GTE:
-            return 1.0 if left >= right else 0.0
+            return left >= right
 
     def visit_IfNode(self, node):
         for condition, block in node.cases:
@@ -83,7 +86,7 @@ class Interpreter:
         if node.else_case:
             return self.visit(node.else_case)
         
-        return 0.0
+        return None
 
     def visit_WhileNode(self, node):
         while self.visit(node.condition_node):

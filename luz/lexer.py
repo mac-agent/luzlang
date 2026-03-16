@@ -9,6 +9,8 @@ class Lexer:
         'while': TokenType.WHILE,
         'for': TokenType.FOR,
         'to': TokenType.TO,
+        'true': TokenType.TRUE,
+        'false': TokenType.FALSE,
     }
 
     def __init__(self, text):

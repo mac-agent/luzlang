@@ -10,6 +10,11 @@ class StringNode:
         self.token = token
     def __repr__(self): return f"\"{self.token.value}\""
 
+class BooleanNode:
+    def __init__(self, token):
+        self.token = token
+    def __repr__(self): return f"{self.token.type.name.lower()}"
+
 class VarAccessNode:
     def __init__(self, token):
         self.token = token
@@ -190,6 +195,9 @@ class Parser:
         elif token.type == TokenType.STRING:
             self.advance()
             return StringNode(token)
+        elif token.type in (TokenType.TRUE, TokenType.FALSE):
+            self.advance()
+            return BooleanNode(token)
         elif token.type == TokenType.IDENTIFIER:
             func_name = token
             self.advance()
