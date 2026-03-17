@@ -18,7 +18,7 @@ class Environment:
             return self.records[name]
         if self.parent:
             return self.parent.lookup(name)
-        raise AccessFault(f"Variable '{name}' no definida")
+        raise AccessFault(f"Variable '{name}' not defined")
 
     def assign(self, name, value):
         if name in self.records:
@@ -26,7 +26,6 @@ class Environment:
             return value
         if self.parent:
             return self.parent.assign(name, value)
-        # Si no existe en ningún ámbito superior, la creamos en el actual (comportamiento por defecto)
         self.records[name] = value
         return value
 
@@ -114,16 +113,16 @@ class Interpreter:
             try:
                 return base[int(index)]
             except IndexError:
-                raise AccessFault(f"Índice {index} fuera de rango")
+                raise AccessFault(f"Index {index} out of range")
             except ValueError:
-                raise LogicFault(f"Índice de lista debe ser un entero")
+                raise LogicFault(f"List index must be an integer")
         elif isinstance(base, dict):
             try:
                 return base[index]
             except KeyError:
-                raise AccessFault(f"Clave '{index}' no encontrada en el diccionario")
+                raise AccessFault(f"Key '{index}' not found in dictionary")
         else:
-            raise LogicFault("El objeto no soporta indexación")
+            raise LogicFault("Object does not support indexing")
 
     def visit_IndexAssignNode(self, node):
         base = self.visit(node.base_node)
@@ -135,14 +134,14 @@ class Interpreter:
                 base[int(index)] = value
                 return value
             except IndexError:
-                raise AccessFault(f"Índice {index} fuera de rango")
+                raise AccessFault(f"Index {index} out of range")
             except ValueError:
-                raise LogicFault(f"Índice de lista debe ser un entero")
+                raise LogicFault(f"List index must be an integer")
         elif isinstance(base, dict):
             base[index] = value
             return value
         else:
-            raise LogicFault("El objeto no soporta asignación por índice")
+            raise LogicFault("Object does not support index assignment")
 
     def visit_AttemptRescueNode(self, node):
         try:
@@ -197,19 +196,19 @@ class Interpreter:
             return left + right
         elif node.op_token.type == TokenType.MINUS:
             if isinstance(left, str) or isinstance(right, str):
-                raise LogicFault("Operación '-' no soportada para strings")
+                raise LogicFault("Operation '-' not supported for strings")
             return left - right
         elif node.op_token.type == TokenType.MUL:
             if isinstance(left, str) and isinstance(right, float):
                 return left * int(right)
             if isinstance(left, float) or isinstance(right, float):
                  return left * right
-            raise LogicFault("Operación '*' solo soportada entre números o string y número")
+            raise LogicFault("Operation '*' only supported between numbers or string and number")
         elif node.op_token.type == TokenType.DIV:
             if isinstance(left, str) or isinstance(right, str):
-                raise LogicFault("Operación '/' no soportada para strings")
+                raise LogicFault("Operation '/' not supported for strings")
             if right == 0:
-                raise MathFault("División por cero")
+                raise MathFault("Division by zero")
             return left / right
         elif node.op_token.type == TokenType.EE:
             return left == right
@@ -218,19 +217,19 @@ class Interpreter:
         elif node.op_token.type == TokenType.LT:
             if isinstance(left, (int, float)) and isinstance(right, (int, float)):
                 return left < right
-            raise LogicFault("Comparación '<' solo soportada entre números")
+            raise LogicFault("Comparison '<' only supported between numbers")
         elif node.op_token.type == TokenType.GT:
             if isinstance(left, (int, float)) and isinstance(right, (int, float)):
                 return left > right
-            raise LogicFault("Comparación '>' solo soportada entre números")
+            raise LogicFault("Comparison '>' only supported between numbers")
         elif node.op_token.type == TokenType.LTE:
             if isinstance(left, (int, float)) and isinstance(right, (int, float)):
                 return left <= right
-            raise LogicFault("Comparación '<=' solo soportada entre números")
+            raise LogicFault("Comparison '<=' only supported between numbers")
         elif node.op_token.type == TokenType.GTE:
             if isinstance(left, (int, float)) and isinstance(right, (int, float)):
                 return left >= right
-            raise LogicFault("Comparación '>=' solo soportada entre números")
+            raise LogicFault("Comparison '>=' only supported between numbers")
         elif node.op_token.type == TokenType.AND:
             return left and right
         elif node.op_token.type == TokenType.OR:
@@ -290,17 +289,17 @@ class Interpreter:
         try:
             function = self.current_env.lookup(func_name)
             if not isinstance(function, LuzFunction):
-                raise LogicFault(f"'{func_name}' no es una función")
+                raise LogicFault(f"'{func_name}' is not a function")
             
             if len(arguments) != len(function.node.arg_tokens):
-                raise LogicFault(f"Esperados {len(function.node.arg_tokens)} argumentos, recibidos {len(arguments)}")
+                raise LogicFault(f"Expected {len(function.node.arg_tokens)} arguments, received {len(arguments)}")
             
             return function(self, arguments)
         except LuzError as e:
             raise e
         except Exception as e:
-            if "no definida" in str(e):
-                raise AccessFault(f"Función '{func_name}' no definida")
+            if "no definida" in str(e) or "not defined" in str(e):
+                raise AccessFault(f"Function '{func_name}' not defined")
             raise SystemFault(str(e))
 
     def builtin_write(self, *args):
@@ -318,35 +317,35 @@ class Interpreter:
         try:
             return float(len(obj))
         except:
-            raise LogicFault("El objeto no tiene longitud")
+            raise LogicFault("Object has no length")
 
     def builtin_append(self, list_obj, element):
         if not isinstance(list_obj, list):
-            raise LogicFault("append() requiere una lista como primer argumento")
+            raise LogicFault("append() requires a list as first argument")
         list_obj.append(element)
         return None
 
     def builtin_pop(self, list_obj, index=None):
         if not isinstance(list_obj, list):
-            raise LogicFault("pop() requiere una lista como primer argumento")
+            raise LogicFault("pop() requires a list as first argument")
         try:
             if index is None:
                 return list_obj.pop()
             return list_obj.pop(int(index))
         except IndexError:
-            raise AccessFault("Índice fuera de rango en pop()")
+            raise AccessFault("Index out of range in pop()")
 
     def builtin_keys(self, dict_obj):
         if not isinstance(dict_obj, dict):
-            raise LogicFault("keys() requiere un diccionario")
+            raise LogicFault("keys() requires a dictionary")
         return list(dict_obj.keys())
 
     def builtin_values(self, dict_obj):
         if not isinstance(dict_obj, dict):
-            raise LogicFault("values() requiere un diccionario")
+            raise LogicFault("values() requires a dictionary")
         return list(dict_obj.values())
 
     def builtin_remove(self, dict_obj, key):
         if not isinstance(dict_obj, dict):
-            raise LogicFault("remove() requiere un diccionario")
+            raise LogicFault("remove() requires a dictionary")
         return dict_obj.pop(key, None)

@@ -21,7 +21,6 @@ def run(text, interpreter):
 def main():
     interpreter = Interpreter()
     
-    # Si se pasa un argumento, intentar ejecutar ese archivo
     if len(sys.argv) > 1:
         filename = sys.argv[1]
         try:
@@ -29,17 +28,16 @@ def main():
                 code = f.read()
                 run(code, interpreter)
         except FileNotFoundError:
-            print(f"Error: El archivo '{filename}' no existe.")
+            print(f"Error: File '{filename}' not found.")
         except Exception as e:
-            print(f"Error al leer el archivo: {e}")
+            print(f"Error reading file: {e}")
     
-    # De lo contrario, iniciar el REPL
     else:
-        print("Intérprete de Luz v1.1 - Escribe 'salir' para finalizar")
+        print("Luz Interpreter v1.1 - Type 'exit' to terminate")
         while True:
             try:
                 text = input("Luz > ")
-                if text.strip().lower() == "salir":
+                if text.strip().lower() == "exit":
                     break
                 if not text.strip():
                     continue
@@ -49,7 +47,7 @@ def main():
                     print(result)
                     
             except KeyboardInterrupt:
-                print("\nSaliendo...")
+                print("\nExiting...")
                 break
             except Exception as e:
                 error_name = type(e).__name__

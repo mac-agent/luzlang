@@ -175,44 +175,44 @@ class Parser:
     def attempt_rescue_expr(self):
         self.advance() # attempt
         if self.current_token.type != TokenType.LBRACE:
-            raise StructureFault("Esperado '{' después de attempt")
+            raise StructureFault("Expected '{' after attempt")
         self.advance()
         
         try_block = self.statements()
         
         if self.current_token.type == TokenType.EOF:
-            raise UnexpectedEOFault("Fin inesperado dentro del bloque attempt")
+            raise UnexpectedEOFault("Unexpected end of file in attempt block")
         if self.current_token.type != TokenType.RBRACE:
-            raise UnexpectedTokenFault(f"Esperado '}}' al final de attempt, recibido {self.current_token}")
+            raise UnexpectedTokenFault(f"Expected '}}' at the end of attempt block, received {self.current_token}")
         self.advance()
         
         if self.current_token.type != TokenType.RESCUE:
-            raise StructureFault("Esperado 'rescue' después del bloque attempt")
+            raise StructureFault("Expected 'rescue' after attempt block")
         self.advance()
         
         if self.current_token.type != TokenType.LPAREN:
-            raise StructureFault("Esperado '(' después de rescue")
+            raise StructureFault("Expected '(' after rescue")
         self.advance()
         
         if self.current_token.type != TokenType.IDENTIFIER:
-            raise UnexpectedTokenFault("Esperado nombre de variable para el error en rescue")
+            raise UnexpectedTokenFault("Expected error variable name in rescue")
         error_var = self.current_token
         self.advance()
         
         if self.current_token.type != TokenType.RPAREN:
-            raise UnexpectedTokenFault("Esperado ')'")
+            raise UnexpectedTokenFault("Expected ')'")
         self.advance()
         
         if self.current_token.type != TokenType.LBRACE:
-            raise StructureFault("Esperado '{' para el bloque rescue")
+            raise StructureFault("Expected '{' for rescue block")
         self.advance()
         
         catch_block = self.statements()
         
         if self.current_token.type == TokenType.EOF:
-            raise UnexpectedEOFault("Fin inesperado dentro del bloque rescue")
+            raise UnexpectedEOFault("Unexpected end of file in rescue block")
         if self.current_token.type != TokenType.RBRACE:
-            raise UnexpectedTokenFault(f"Esperado '}}' al final de rescue, recibido {self.current_token}")
+            raise UnexpectedTokenFault(f"Expected '}}' at the end of rescue block, received {self.current_token}")
         self.advance()
         
         return AttemptRescueNode(try_block, error_var, catch_block)
@@ -220,12 +220,12 @@ class Parser:
     def func_def(self):
         self.advance() # function
         if self.current_token.type != TokenType.IDENTIFIER:
-            raise UnexpectedTokenFault("Esperado nombre de función")
+            raise UnexpectedTokenFault("Expected function name")
         name_token = self.current_token
         self.advance()
         
         if self.current_token.type != TokenType.LPAREN:
-            raise StructureFault("Esperado '('")
+            raise StructureFault("Expected '('")
         self.advance()
         
         arg_tokens = []
@@ -235,24 +235,24 @@ class Parser:
             while self.current_token.type == TokenType.COMMA:
                 self.advance()
                 if self.current_token.type != TokenType.IDENTIFIER:
-                    raise UnexpectedTokenFault("Esperado nombre de argumento")
+                    raise UnexpectedTokenFault("Expected argument name")
                 arg_tokens.append(self.current_token)
                 self.advance()
         
         if self.current_token.type != TokenType.RPAREN:
-            raise UnexpectedTokenFault("Esperado ')'")
+            raise UnexpectedTokenFault("Expected ')'")
         self.advance()
         
         if self.current_token.type != TokenType.LBRACE:
-            raise StructureFault("Esperado '{'")
+            raise StructureFault("Expected '{'")
         self.advance()
         
         block = self.statements()
         
         if self.current_token.type == TokenType.EOF:
-            raise UnexpectedEOFault("Fin inesperado en definición de función")
+            raise UnexpectedEOFault("Unexpected end of file in function definition")
         if self.current_token.type != TokenType.RBRACE:
-            raise UnexpectedTokenFault("Esperado '}'")
+            raise UnexpectedTokenFault("Expected '}'")
         self.advance()
         
         return FuncDefNode(name_token, arg_tokens, block)
@@ -264,11 +264,11 @@ class Parser:
         self.advance()
         condition = self.expr()
         if self.current_token.type != TokenType.LBRACE:
-            raise StructureFault("Esperado '{' después de la condición de if")
+            raise StructureFault("Expected '{' after if condition")
         self.advance()
         block = self.statements()
         if self.current_token.type != TokenType.RBRACE:
-            raise UnexpectedTokenFault("Esperado '}' después del bloque de if")
+            raise UnexpectedTokenFault("Expected '}' after if block")
         self.advance()
         cases.append((condition, block))
 
@@ -276,22 +276,22 @@ class Parser:
             self.advance()
             condition = self.expr()
             if self.current_token.type != TokenType.LBRACE:
-                raise StructureFault("Esperado '{' después de la condición de elif")
+                raise StructureFault("Expected '{' after elif condition")
             self.advance()
             block = self.statements()
             if self.current_token.type != TokenType.RBRACE:
-                raise UnexpectedTokenFault("Esperado '}' después del bloque de elif")
+                raise UnexpectedTokenFault("Expected '}' after elif block")
             self.advance()
             cases.append((condition, block))
 
         if self.current_token.type == TokenType.ELSE:
             self.advance()
             if self.current_token.type != TokenType.LBRACE:
-                raise StructureFault("Esperado '{' después de else")
+                raise StructureFault("Expected '{' after else")
             self.advance()
             else_case = self.statements()
             if self.current_token.type != TokenType.RBRACE:
-                raise UnexpectedTokenFault("Esperado '}' después del bloque de else")
+                raise UnexpectedTokenFault("Expected '}' after else block")
             self.advance()
 
         return IfNode(cases, else_case)
@@ -300,34 +300,34 @@ class Parser:
         self.advance() # while
         condition = self.expr()
         if self.current_token.type != TokenType.LBRACE:
-            raise StructureFault("Esperado '{' después de la condición de while")
+            raise StructureFault("Expected '{' after while condition")
         self.advance()
         block = self.statements()
         if self.current_token.type != TokenType.RBRACE:
-            raise UnexpectedTokenFault("Esperado '}' después del bloque de while")
+            raise UnexpectedTokenFault("Expected '}' after while block")
         self.advance()
         return WhileNode(condition, block)
 
     def for_expr(self):
         self.advance() # for
         if self.current_token.type != TokenType.IDENTIFIER:
-            raise UnexpectedTokenFault("Esperado nombre de variable después de 'for'")
+            raise UnexpectedTokenFault("Expected variable name after 'for'")
         var_name = self.current_token
         self.advance()
         if self.current_token.type != TokenType.ASSIGN:
-            raise StructureFault("Esperado '=' después del nombre de variable en for")
+            raise StructureFault("Expected '=' after for variable")
         self.advance()
         start_value = self.expr()
         if self.current_token.type != TokenType.TO:
-            raise StructureFault("Esperado 'to' después del valor inicial en for")
+            raise StructureFault("Expected 'to' after for start value")
         self.advance()
         end_value = self.expr()
         if self.current_token.type != TokenType.LBRACE:
-            raise StructureFault("Esperado '{' después del rango en for")
+            raise StructureFault("Expected '{' after for range")
         self.advance()
         block = self.statements()
         if self.current_token.type != TokenType.RBRACE:
-            raise UnexpectedTokenFault("Esperado '}' después del bloque de for")
+            raise UnexpectedTokenFault("Expected '}' after for block")
         self.advance()
         return ForNode(var_name, start_value, end_value, block)
 
@@ -379,18 +379,18 @@ class Parser:
             self.advance()
             node = self.expr()
             if self.current_token.type != TokenType.RPAREN:
-                 raise UnexpectedTokenFault("Esperado ')'")
+                 raise UnexpectedTokenFault("Expected ')'")
             self.advance()
         elif token.type == TokenType.EOF:
-            raise UnexpectedEOFault("Fin inesperado de expresión")
+            raise UnexpectedEOFault("Unexpected end of expression")
         else:
-            raise UnexpectedTokenFault(f"Token inesperado: {token}")
+            raise UnexpectedTokenFault(f"Unexpected token: {token}")
 
         while self.current_token.type == TokenType.LBRACKET:
             self.advance()
             index = self.expr()
             if self.current_token.type != TokenType.RBRACKET:
-                raise UnexpectedTokenFault("Esperado ']'")
+                raise UnexpectedTokenFault("Expected ']'")
             self.advance()
             node = IndexAccessNode(node, index)
             
@@ -411,7 +411,7 @@ class Parser:
                     args.append(self.expr())
             
             if self.current_token.type != TokenType.RPAREN:
-                raise UnexpectedTokenFault("Esperado ',' o ')'")
+                raise UnexpectedTokenFault("Expected ',' or ')'")
             self.advance()
             return CallNode(token, args)
         else:
@@ -429,7 +429,7 @@ class Parser:
                 elements.append(self.expr())
         
         if self.current_token.type != TokenType.RBRACKET:
-            raise UnexpectedTokenFault("Esperado ']' al final de la lista")
+            raise UnexpectedTokenFault("Expected ']' at the end of list")
         self.advance()
         return ListNode(elements)
 
@@ -439,7 +439,7 @@ class Parser:
         if self.current_token.type != TokenType.RBRACE:
             key = self.expr()
             if self.current_token.type != TokenType.COLON:
-                raise StructureFault("Esperado ':' después de la clave en el diccionario")
+                raise StructureFault("Expected ':' after dictionary key")
             self.advance()
             value = self.expr()
             pairs.append((key, value))
@@ -450,13 +450,13 @@ class Parser:
                     break
                 key = self.expr()
                 if self.current_token.type != TokenType.COLON:
-                    raise StructureFault("Esperado ':' después de la clave en el diccionario")
+                    raise StructureFault("Expected ':' after dictionary key")
                 self.advance()
                 value = self.expr()
                 pairs.append((key, value))
         
         if self.current_token.type != TokenType.RBRACE:
-            raise UnexpectedTokenFault("Esperado '}' al final del diccionario")
+            raise UnexpectedTokenFault("Expected '}' at the end of dictionary")
         self.advance()
         return DictNode(pairs)
 
