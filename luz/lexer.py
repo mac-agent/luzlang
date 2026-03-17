@@ -1,5 +1,6 @@
 import string
 from .tokens import TokenType, Token
+from .exceptions import InvalidTokenFault
 
 class Lexer:
     KEYWORDS = {
@@ -69,7 +70,7 @@ class Lexer:
             self.advance()
         
         if self.current_char != '"':
-            raise Exception("String no cerrado con '\"'")
+            raise InvalidTokenFault("String no cerrado con '\"'")
         
         self.advance() # Saltar la última comilla
         return Token(TokenType.STRING, string_val)
@@ -86,7 +87,7 @@ class Lexer:
         if self.current_char == '=':
             self.advance()
             return Token(TokenType.NE)
-        raise Exception("Esperado '=' después de '!'")
+        raise InvalidTokenFault("Esperado '=' después de '!'")
 
     def make_less_than(self):
         self.advance()
@@ -160,7 +161,7 @@ class Lexer:
             elif self.current_char == '>':
                 tokens.append(self.make_greater_than())
             else:
-                raise Exception(f"Carácter ilegal: '{self.current_char}'")
+                raise InvalidTokenFault(f"Carácter ilegal: '{self.current_char}'")
         
         tokens.append(Token(TokenType.EOF))
         return tokens

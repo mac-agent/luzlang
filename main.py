@@ -14,7 +14,8 @@ def run(text, interpreter):
         result = interpreter.visit(ast)
         return result
     except Exception as e:
-        print(f"Error: {e}")
+        error_name = type(e).__name__
+        print(f"{error_name}: {e}")
         return None
 
 def main():
@@ -51,7 +52,8 @@ def main():
                 print("\nSaliendo...")
                 break
             except Exception as e:
-                print(f"Error: {e}")
+                error_name = type(e).__name__
+                print(f"{error_name}: {e}")
 
 if __name__ == "__main__":
     main()

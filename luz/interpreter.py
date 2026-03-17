@@ -1,22 +1,8 @@
 from .tokens import TokenType
-
-# Excepciones personalizadas de Luz
-class LuzError(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(message)
-
-class ReturnException(LuzError):
-    def __init__(self, value):
-        self.value = value
-        super().__init__("Return")
-
-class MathFault(LuzError): pass
-class LogicFault(LuzError): pass
-class AccessFault(LuzError): pass
-class SyntaxFault(LuzError): pass
-class SystemFault(LuzError): pass
-class UserFault(LuzError): pass # Para 'alert'
+from .exceptions import (
+    LuzError, ReturnException, MathFault, LogicFault, 
+    AccessFault, SyntaxFault, SystemFault, UserFault
+)
 
 class Environment:
     def __init__(self, parent=None):
@@ -162,23 +148,18 @@ class Interpreter:
         try:
             return self.visit(node.try_block)
         except LuzError as e:
-            # Si no es ReturnException (que no deberia ser capturada aqui normalmente si esta dentro de una funcion que debe retornar)
-            # Pero attempt puede envolver returns. Si es return, lo dejamos pasar.
             if isinstance(e, ReturnException):
                 raise e
             
-            # Crear un nuevo scope para el bloque rescue
             previous_env = self.current_env
             rescue_env = Environment(previous_env)
             self.current_env = rescue_env
             try:
-                # Definir la variable de error
                 self.current_env.define(node.error_var_token.value, e.message)
                 return self.visit(node.catch_block)
             finally:
                 self.current_env = previous_env
         except Exception as e:
-            # Capturar errores inesperados de Python como SystemFault
             previous_env = self.current_env
             rescue_env = Environment(previous_env)
             self.current_env = rescue_env
@@ -276,7 +257,6 @@ class Interpreter:
         end_value = self.visit(node.end_value_node)
 
         i = start_value
-        # Creamos un ámbito local para el bucle for
         previous_env = self.current_env
         self.current_env = Environment(previous_env)
         try:
