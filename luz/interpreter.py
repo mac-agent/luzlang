@@ -61,7 +61,10 @@ class Interpreter:
             'pop': self.builtin_pop,
             'keys': self.builtin_keys,
             'values': self.builtin_values,
-            'remove': self.builtin_remove
+            'remove': self.builtin_remove,
+            'to_num': self.builtin_to_num,
+            'to_str': self.builtin_to_str,
+            'to_bool': self.builtin_to_bool
         }
 
     def execute_block(self, block, env):
@@ -351,7 +354,13 @@ class Interpreter:
             raise InternalFault(str(e))
 
     def builtin_write(self, *args):
-        print(*args)
+        formatted_args = []
+        for arg in args:
+            if isinstance(arg, bool):
+                formatted_args.append("true" if arg else "false")
+            else:
+                formatted_args.append(arg)
+        print(*formatted_args)
         return None
 
     def builtin_listen(self, prompt=""):
@@ -404,3 +413,17 @@ class Interpreter:
             raise MemoryAccessFault(f"Key '{key}' not found in dictionary")
         except TypeError:
             raise TypeViolationFault(f"Invalid key type: '{type(key).__name__}'")
+
+    def builtin_to_num(self, value):
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            raise CastFault(f"Cannot cast value '{value}' of type '{type(value).__name__}' to Number")
+
+    def builtin_to_str(self, value):
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        return str(value)
+
+    def builtin_to_bool(self, value):
+        return bool(value)

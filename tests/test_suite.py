@@ -94,7 +94,7 @@ def test_lists():
 def test_dicts():
     print("Testing dictionaries...")
     interpreter = Interpreter()
-    code = 'd = {"name": "Elabsurdo984", "age": 25} res = d["name"]'
+    code = 'd = {"name": "Eloi", "age": 25} res = d["name"]'
     interpreter.visit(Parser(Lexer(code).get_tokens()).parse())
     assert interpreter.global_env.lookup('res') == "Eloi"
     
@@ -142,6 +142,27 @@ def test_errors():
     assert "My custom error" in str(caught)
     print("Error handling: OK")
 
+def test_casting():
+    print("Testing type conversion (casting)...")
+    interpreter = Interpreter()
+    
+    # to_num
+    code = 'res = to_num("123.45")'
+    interpreter.visit(Parser(Lexer(code).get_tokens()).parse())
+    assert interpreter.global_env.lookup('res') == 123.45
+    
+    # to_str
+    code = 'res = to_str(true)'
+    interpreter.visit(Parser(Lexer(code).get_tokens()).parse())
+    assert interpreter.global_env.lookup('res') == "true"
+    
+    # to_bool
+    code = 'res = to_bool(1)'
+    interpreter.visit(Parser(Lexer(code).get_tokens()).parse())
+    assert interpreter.global_env.lookup('res') is True
+    
+    print("Casting: OK")
+
 def run_all():
     print("=== STARTING LUZ TEST SUITE ===\n")
     try:
@@ -153,6 +174,7 @@ def run_all():
         test_lists()
         test_dicts()
         test_errors()
+        test_casting()
         print("\n=== ALL TESTS PASSED SUCCESSFULLY! ===")
     except Exception as e:
         print(f"\nTEST ERROR: {e}")
