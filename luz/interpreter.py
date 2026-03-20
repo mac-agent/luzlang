@@ -138,6 +138,41 @@ class LuzFunction:
         return None  # Implicit return value when no `return` statement is reached
 
 
+# ── Class and instance representation ────────────────────────────────────────
+
+# LuzClass holds the class name and its methods (a dict of name → LuzFunction).
+# It is stored in the environment under the class name, just like a function.
+class LuzClass:
+    def __init__(self, name, methods):
+        self.name = name
+        self.methods = methods  # dict: method_name -> LuzFunction
+
+    def __repr__(self):
+        return f"<class {self.name}>"
+
+
+# LuzInstance is the runtime object created when a class is called as a
+# constructor.  It stores instance attributes in a plain dict and looks up
+# methods on its class when an attribute is not found locally.
+class LuzInstance:
+    def __init__(self, luz_class):
+        self.luz_class = luz_class
+        self.attributes = {}
+
+    def get(self, name):
+        if name in self.attributes:
+            return self.attributes[name]
+        if name in self.luz_class.methods:
+            return self.luz_class.methods[name]
+        raise AttributeNotFoundFault(f"'{self.luz_class.name}' has no attribute '{name}'")
+
+    def set(self, name, value):
+        self.attributes[name] = value
+
+    def __repr__(self):
+        return f"<{self.luz_class.name} instance>"
+
+
 # ── Interpreter ───────────────────────────────────────────────────────────────
 
 class Interpreter:
@@ -662,6 +697,15 @@ class Interpreter:
 
         try:
             function = self.current_env.lookup(func_name)
+
+            # Class constructor call: Dog("Rex") creates a new LuzInstance and
+            # calls the `init` method if one is defined.
+            if isinstance(function, LuzClass):
+                instance = LuzInstance(function)
+                if 'init' in function.methods:
+                    function.methods['init'](self, [instance] + arguments)
+                return instance
+
             if not isinstance(function, LuzFunction):
                 # The name exists but holds a non-callable value (e.g. a number).
                 raise InvalidUsageFault(f"'{func_name}' is not a callable function")
@@ -868,3 +912,44 @@ class Interpreter:
         self._require_str(s, 'count')
         self._require_str(sub, 'count')
         return s.count(sub)
+
+    # ── OOP visitors ──────────────────────────────────────────────────────────
+
+    # visit_ClassDefNode() builds a LuzClass from the parsed method definitions
+    # and stores it in the current environment under the class name.
+    def visit_ClassDefNode(self, node):
+        methods = {}
+        for method_node in node.methods:
+            methods[method_node.name_token.value] = LuzFunction(method_node, self.current_env)
+        luz_class = LuzClass(node.name_token.value, methods)
+        self.current_env.assign(node.name_token.value, luz_class)
+        return luz_class
+
+    # visit_AttributeAccessNode() reads obj.attr from a LuzInstance.
+    def visit_AttributeAccessNode(self, node):
+        obj = self.visit(node.obj_node)
+        if not isinstance(obj, LuzInstance):
+            raise InvalidUsageFault(f"Cannot access attribute on non-instance value '{obj}'")
+        return obj.get(node.attr_token.value)
+
+    # visit_AttributeAssignNode() writes obj.attr = value on a LuzInstance.
+    def visit_AttributeAssignNode(self, node):
+        obj = self.visit(node.obj_node)
+        if not isinstance(obj, LuzInstance):
+            raise InvalidUsageFault(f"Cannot set attribute on non-instance value '{obj}'")
+        value = self.visit(node.value_node)
+        obj.set(node.attr_token.value, value)
+        return value
+
+    # visit_MethodCallNode() calls obj.method(args), passing the instance as
+    # the first argument so that the method body can access it via `self`.
+    def visit_MethodCallNode(self, node):
+        obj = self.visit(node.obj_node)
+        if not isinstance(obj, LuzInstance):
+            raise InvalidUsageFault(f"Cannot call method on non-instance value '{obj}'")
+        method = obj.get(node.method_token.value)
+        if not isinstance(method, LuzFunction):
+            raise InvalidUsageFault(f"'{node.method_token.value}' is not a callable method")
+        args = [self.visit(arg) for arg in node.arguments]
+        # Prepend the instance as the first argument (bound to `self` in the method).
+        return method(self, [obj] + args)

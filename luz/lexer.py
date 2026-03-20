@@ -51,6 +51,8 @@ class Lexer:
         'break': TokenType.BREAK,
         'continue': TokenType.CONTINUE,
         'pass': TokenType.PASS,
+        'class': TokenType.CLASS,
+        'self': TokenType.SELF,
     }
 
     # ESCAPE_SEQUENCES maps the character after a backslash to the actual
@@ -132,9 +134,11 @@ class Lexer:
             self.advance()
 
         token_type = self.KEYWORDS.get(id_str, TokenType.IDENTIFIER)
-        # Only attach the identifier string as the token's value for user-defined
-        # names; keyword tokens don't need it since the type is self-descriptive.
-        return Token(token_type, id_str if token_type == TokenType.IDENTIFIER else None, line)
+        # IDENTIFIER and SELF tokens carry the name string as their value so
+        # the parser can use token.value to look them up in the environment.
+        # All other keyword tokens don't need a value — their type is sufficient.
+        needs_value = token_type in (TokenType.IDENTIFIER, TokenType.SELF)
+        return Token(token_type, id_str if needs_value else None, line)
 
     # make_string() processes a double-quoted string literal, including backslash
     # escape sequences.  The opening quote has already been identified by
@@ -248,8 +252,14 @@ class Lexer:
             if self.current_char.isspace():
                 self.skip_whitespace()
 
-            # Numbers can start with a digit or a bare '.' (e.g. .5 == 0.5).
-            elif self.current_char.isdigit() or self.current_char == '.':
+            # Numbers start with a digit, or with '.' only when followed by a digit
+            # (e.g. .5 == 0.5).  A bare '.' not followed by a digit is a DOT token
+            # for attribute access, handled further down.
+            elif self.current_char.isdigit() or (
+                self.current_char == '.' and
+                self.pos + 1 < len(self.text) and
+                self.text[self.pos + 1].isdigit()
+            ):
                 tokens.append(self.make_number())
 
             # Identifiers and keywords both start with a letter.
@@ -314,6 +324,9 @@ class Lexer:
                 tokens.append(self.make_less_than())
             elif self.current_char == '>':
                 tokens.append(self.make_greater_than())
+            elif self.current_char == ".":
+                tokens.append(Token(TokenType.DOT, None, self.line))
+                self.advance()
 
             else:
                 # No rule matched — the character is not part of the Luz alphabet.

@@ -84,6 +84,12 @@ class TokenType(Enum):
     CONTINUE = auto()
     PASS = auto()      # No-op placeholder (like Python's pass)
 
+    # ── Object-oriented programming ───────────────────────────────────────────
+    CLASS = auto()     # class keyword - begins a class definition
+    SELF = auto()      # self - refers to the current instance
+    DOT = auto()       # .  - attribute access: obj.name
+
+
     # ── String literals ───────────────────────────────────────────────────────
     STRING = auto()    # Double-quoted string, e.g. "hello"
 

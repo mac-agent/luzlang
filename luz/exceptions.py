@@ -135,6 +135,7 @@ class FunctionNotFoundFault(SemanticFault): pass  # Calling a name that doesn't 
 class ArgumentFault(SemanticFault): pass          # Wrong type of argument passed to a builtin
 class ArityFault(SemanticFault): pass             # Wrong number of arguments passed to a function
 class InvalidUsageFault(SemanticFault): pass      # Using a value in a way it doesn't support
+class AttributeNotFoundFault(SemanticFault): pass  # Accessing an attribute that doesn't exist on an instance
 
 # Control-flow semantic errors (e.g. `break` outside a loop — not yet enforced
 # at parse time, so these exist for potential runtime enforcement)

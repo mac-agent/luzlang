@@ -191,6 +191,32 @@ class ContinueNode:
 class PassNode:
     def __repr__(self): return "pass"
 
+# Represents a class definition: class Name { method ... }
+class ClassDefNode:
+    def __init__(self, name_token, methods):
+        self.name_token = name_token
+        self.methods = methods  # List of FuncDefNode
+
+# Represents reading an attribute: obj.name
+class AttributeAccessNode:
+    def __init__(self, obj_node, attr_token):
+        self.obj_node = obj_node
+        self.attr_token = attr_token
+    def __repr__(self): return f"{self.obj_node}.{self.attr_token.value}"
+
+# Represents writing an attribute: obj.name = value
+class AttributeAssignNode:
+    def __init__(self, obj_node, attr_token, value_node):
+        self.obj_node = obj_node
+        self.attr_token = attr_token
+        self.value_node = value_node
+        
+class MethodCallNode:
+    def __init__(self, obj_node, method_token, arguments):
+        self.obj_node = obj_node
+        self.method_token = method_token
+        self.arguments = arguments
+
 # Represents a function call: name(arg, arg, …)
 # arguments is a list of AST nodes (the evaluated argument expressions).
 class CallNode:
@@ -304,6 +330,9 @@ class Parser:
             self.advance()
             node = PassNode(); node.line = line
             return node
+        
+        if self.current_token.type == TokenType.CLASS:
+            return self.class_def()
 
         if self.current_token.type == TokenType.IDENTIFIER:
             # One-token lookahead: if the token after the identifier is '=',
@@ -324,13 +353,20 @@ class Parser:
         node = self.expr()
 
         # Post-expression check for index assignment: lista[0] = 5
-        # The expression parser produces an IndexAccessNode first; only here do
-        # we know whether a '=' follows it, promoting it to an IndexAssignNode.
         if isinstance(node, IndexAccessNode) and self.current_token.type == TokenType.ASSIGN:
             line = node.line
             self.advance()  # Consume '='
             value = self.expr()
             assign_node = IndexAssignNode(node.base_node, node.index_node, value)
+            assign_node.line = line
+            return assign_node
+
+        # Post-expression check for attribute assignment: obj.attr = value
+        if isinstance(node, AttributeAccessNode) and self.current_token.type == TokenType.ASSIGN:
+            line = node.line
+            self.advance()  # Consume '='
+            value = self.expr()
+            assign_node = AttributeAssignNode(node.obj_node, node.attr_token, value)
             assign_node.line = line
             return assign_node
 
@@ -403,14 +439,16 @@ class Parser:
         self.advance()  # Consume '('
 
         # Parse the parameter list, which may be empty.
+        # Both IDENTIFIER and SELF are valid parameter names (methods use `self`
+        # as their first parameter to receive the instance at call time).
         arg_tokens = []
-        if self.current_token.type == TokenType.IDENTIFIER:
+        if self.current_token.type in (TokenType.IDENTIFIER, TokenType.SELF):
             arg_tokens.append(self.current_token)
             self.advance()
             # Additional parameters are comma-separated.
             while self.current_token.type == TokenType.COMMA:
                 self.advance()  # Consume ','
-                if self.current_token.type != TokenType.IDENTIFIER:
+                if self.current_token.type not in (TokenType.IDENTIFIER, TokenType.SELF):
                     raise UnexpectedTokenFault("Expected argument name")
                 arg_tokens.append(self.current_token)
                 self.advance()
@@ -432,6 +470,27 @@ class Parser:
         self.advance()  # Consume '}'
 
         node = FuncDefNode(name_token, arg_tokens, block); node.line = line
+        return node
+    
+    def class_def(self):
+        line = self.current_token.line
+        self.advance()  # Consume 'class'
+        if self.current_token.type != TokenType.IDENTIFIER:
+            raise UnexpectedTokenFault("Expected class name")
+        name_token = self.current_token
+        self.advance()
+        if self.current_token.type != TokenType.LBRACE:
+            raise StructureFault("Expected '{' after class name")
+        self.advance()  # Consume '{'
+        methods = []
+        while self.current_token.type != TokenType.RBRACE:
+            if self.current_token.type == TokenType.EOF:
+                raise UnexpectedEOFault("Unexpected end of file in class")
+            if self.current_token.type != TokenType.FUNCTION:
+                raise UnexpectedTokenFault("Expected method definition inside class")
+            methods.append(self.func_def())
+        self.advance()  # Consume '}'
+        node = ClassDefNode(name_token, methods); node.line = line
         return node
 
     # if_expr() parses the full if / elif* / else? chain into a single IfNode.
@@ -618,6 +677,13 @@ class Parser:
             # Could be a plain variable read or a function call — identifier_expr
             # peeks at the next token to decide.
             node = self.identifier_expr()
+        elif token.type == TokenType.SELF:
+            # `self` inside a method refers to the current instance.
+            # It is treated as a variable access so that `self.attr` parsing
+            # falls through to the DOT-chaining loop below.
+            self.advance()
+            node = VarAccessNode(token)
+            node.line = token.line
         elif token.type == TokenType.LPAREN:
             # Parenthesised sub-expression for explicit grouping.
             self.advance()  # Consume '('
@@ -641,7 +707,37 @@ class Parser:
             self.advance()  # Consume ']'
             index_node = IndexAccessNode(node, index)
             index_node.line = bracket_line
-            node = index_node  # The new node becomes the base for the next '[' if any
+            node = index_node
+
+        # Handle zero or more chained dot accesses: obj.attr  or  obj.method(args)
+        # This loop also handles chaining: obj.a.b.c()
+        while self.current_token.type == TokenType.DOT:
+            dot_line = self.current_token.line
+            self.advance()  # Consume '.'
+            if self.current_token.type != TokenType.IDENTIFIER:
+                raise UnexpectedTokenFault("Expected attribute or method name after '.'")
+            attr_token = self.current_token
+            self.advance()  # Consume the attribute/method name
+            if self.current_token.type == TokenType.LPAREN:
+                # Method call: obj.method(args)
+                self.advance()  # Consume '('
+                args = []
+                if self.current_token.type != TokenType.RPAREN:
+                    args.append(self.expr())
+                    while self.current_token.type == TokenType.COMMA:
+                        self.advance()
+                        if self.current_token.type == TokenType.RPAREN:
+                            break
+                        args.append(self.expr())
+                if self.current_token.type != TokenType.RPAREN:
+                    raise UnexpectedTokenFault("Expected ')'")
+                self.advance()  # Consume ')'
+                node = MethodCallNode(node, attr_token, args)
+                node.line = dot_line
+            else:
+                # Attribute read: obj.attr
+                node = AttributeAccessNode(node, attr_token)
+                node.line = dot_line
 
         return node
 
