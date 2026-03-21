@@ -328,6 +328,9 @@ class Interpreter:
         # TokenType.TRUE/FALSE → Python True/False
         return True if node.token.type == TokenType.TRUE else False
 
+    def visit_NullNode(self, node):
+        return None
+
     def visit_ListNode(self, node):
         # Evaluate every element expression and collect the results into a Python list.
         return [self.visit(element) for element in node.elements]
@@ -766,7 +769,9 @@ class Interpreter:
     def builtin_write(self, *args):
         formatted_args = []
         for arg in args:
-            if isinstance(arg, bool):
+            if arg is None:
+                formatted_args.append("null")
+            elif isinstance(arg, bool):
                 formatted_args.append("true" if arg else "false")
             else:
                 formatted_args.append(arg)
@@ -864,6 +869,8 @@ class Interpreter:
     # to_str() uses Luz boolean representation ("true"/"false") rather than
     # Python's capitalised "True"/"False".
     def builtin_to_str(self, value):
+        if value is None:
+            return "null"
         if isinstance(value, bool):
             return "true" if value else "false"
         return str(value)
@@ -1028,6 +1035,8 @@ class Interpreter:
     # For class instances it returns the class name, for primitives it returns
     # the Luz type name ("int", "float", "string", "bool", "list", "dict").
     def builtin_typeof(self, value):
+        if value is None:
+            return "null"
         if isinstance(value, LuzInstance):
             return value.luz_class.name
         if isinstance(value, LuzClass):

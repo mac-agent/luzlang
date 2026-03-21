@@ -39,6 +39,7 @@ class Lexer:
         'to': TokenType.TO,
         'true': TokenType.TRUE,
         'false': TokenType.FALSE,
+        'null': TokenType.NULL,
         'and': TokenType.AND,
         'or': TokenType.OR,
         'not': TokenType.NOT,

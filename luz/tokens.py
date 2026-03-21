@@ -61,6 +61,7 @@ class TokenType(Enum):
     # ── Boolean literals ──────────────────────────────────────────────────────
     TRUE = auto()
     FALSE = auto()
+    NULL = auto()      # null — the absence of a value
 
     # ── Logical operators ─────────────────────────────────────────────────────
     AND = auto()

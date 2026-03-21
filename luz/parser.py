@@ -65,6 +65,10 @@ class BooleanNode:
         self.token = token
     def __repr__(self): return f"{self.token.type.name.lower()}"
 
+# Represents the null literal.
+class NullNode:
+    def __repr__(self): return "null"
+
 # Represents a list literal: [expr, expr, …]
 class ListNode:
     def __init__(self, elements):
@@ -680,6 +684,10 @@ class Parser:
         elif token.type in (TokenType.TRUE, TokenType.FALSE):
             self.advance()
             node = BooleanNode(token)
+            node.line = token.line
+        elif token.type == TokenType.NULL:
+            self.advance()
+            node = NullNode()
             node.line = token.line
         elif token.type == TokenType.LBRACKET:
             node = self.list_literal()
