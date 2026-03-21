@@ -28,6 +28,7 @@ for i = 1 to 5 {
   - [Operators](#operators)
   - [Control Flow](#control-flow)
   - [Functions](#functions)
+  - [Lambdas](#lambdas)
   - [Collections](#collections)
   - [Object-Oriented Programming](#object-oriented-programming)
   - [Error Handling](#error-handling)
@@ -46,6 +47,7 @@ for i = 1 to 5 {
 - **String operations** — indexing, escape sequences, and 11 built-in string functions
 - **Control flow** — `if / elif / else`, `while`, `for` (range and for-each), `break`, `continue`, `pass`
 - **Functions** — user-defined functions with closures and return values
+- **Lambdas** — `fn(x) => x * 2` and `fn(x) { body }` as first-class values
 - **Object-oriented programming** — classes, instances, inheritance (`extends`), method overriding, and `super`
 - **Polymorphism** — duck typing, `typeof()`, and `instanceof()`
 - **Math built-ins** — `abs`, `sqrt`, `floor`, `ceil`, `round`, `clamp`, `max`, `min`, `sign`, `odd`, `even`
@@ -294,6 +296,72 @@ function make_counter() {
     }
     return increment
 }
+```
+
+---
+
+### Lambdas
+
+Lambdas are anonymous functions that can be stored in variables, passed as arguments, or returned from other functions.
+
+**Short form** — evaluates a single expression:
+
+```
+double = fn(x) => x * 2
+write(double(5))   # 10
+
+add = fn(a, b) => a + b
+write(add(3, 4))   # 7
+```
+
+**Long form** — runs a block with multiple statements:
+
+```
+greet = fn(name) {
+    msg = "Hello, " + name + "!"
+    return msg
+}
+
+write(greet("Luz"))   # Hello, Luz!
+```
+
+**No parameters:**
+
+```
+say_hi = fn() => "hi!"
+write(say_hi())   # hi!
+```
+
+**Passing as arguments:**
+
+```
+function apply(f, value) {
+    return f(value)
+}
+
+write(apply(fn(x) => x * x, 6))   # 36
+```
+
+**Storing in lists:**
+
+```
+ops = [fn(x) => x + 1, fn(x) => x * 2, fn(x) => x - 3]
+for op in ops {
+    write(op(10))
+}
+# 11, 20, 7
+```
+
+**Closures** — lambdas capture variables from the surrounding scope:
+
+```
+function make_adder(n) {
+    return fn(x) => x + n
+}
+
+add5 = make_adder(5)
+write(add5(3))    # 8
+write(add5(10))   # 15
 ```
 
 ---
