@@ -17,6 +17,10 @@
          <lastmod>2026-03-22</lastmod>
     </url>
     <url>
+         <loc>https://elabsurdo984.github.io/luz-lang/ray/</loc>
+         <lastmod>2026-03-22</lastmod>
+    </url>
+    <url>
          <loc>https://elabsurdo984.github.io/luz-lang/getting-started/installation/</loc>
          <lastmod>2026-03-22</lastmod>
     </url>
@@ -66,6 +70,14 @@
     </url>
     <url>
          <loc>https://elabsurdo984.github.io/luz-lang/language/variables/</loc>
+         <lastmod>2026-03-22</lastmod>
+    </url>
+    <url>
+         <loc>https://elabsurdo984.github.io/luz-lang/stdlib/math/</loc>
+         <lastmod>2026-03-22</lastmod>
+    </url>
+    <url>
+         <loc>https://elabsurdo984.github.io/luz-lang/stdlib/random/</loc>
          <lastmod>2026-03-22</lastmod>
     </url>
 </urlset>
