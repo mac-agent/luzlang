@@ -3,11 +3,10 @@ name: Release Linux
 on:
   push:
     tags:
-      - "linux-v*"
+      - "v*"
 
 jobs:
   build-linux:
-    # Build inside a Debian 11 (bullseye) container for glibc 2.31 compatibility
     runs-on: ubuntu-22.04
     container: python:3.11-slim-bullseye
 
@@ -38,11 +37,9 @@ jobs:
           cp -r libs/luz-system luz-linux/lib/
           cp -r libs/luz-io luz-linux/lib/
           cp -r libs/luz-clock luz-linux/lib/
-          tar -czf "luz-${GITHUB_REF_NAME}.tar.gz" -C luz-linux .
+          tar -czf "luz-${GITHUB_REF_NAME}-linux.tar.gz" -C luz-linux .
 
-      - name: Create GitHub Release and upload Linux binaries
+      - name: Upload Linux binaries to release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Luz Linux ${{ github.ref_name }}"
-          files: luz-${{ github.ref_name }}.tar.gz
-          generate_release_notes: true
+          files: luz-${{ github.ref_name }}-linux.tar.gz
