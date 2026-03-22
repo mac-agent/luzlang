@@ -53,8 +53,6 @@ jobs:
     # Build inside a Debian 11 (bullseye) container for glibc 2.31 compatibility
     runs-on: ubuntu-22.04
     container: python:3.11-slim-bullseye
-    env:
-      LINUX_VERSION: "0.1.0"
 
     steps:
       - name: Checkout code
@@ -82,9 +80,9 @@ jobs:
           cp -r libs/luz-random luz-linux/lib/
           cp -r libs/luz-system luz-linux/lib/
           cp -r libs/luz-io luz-linux/lib/
-          tar -czf "luz-linux-${LINUX_VERSION}.tar.gz" -C luz-linux .
+          tar -czf "luz-linux-${GITHUB_REF_NAME}.tar.gz" -C luz-linux .
 
       - name: Upload Linux binaries to release
         uses: softprops/action-gh-release@v2
         with:
-          files: luz-linux-${{ env.LINUX_VERSION }}.tar.gz
+          files: luz-linux-${{ github.ref_name }}.tar.gz
