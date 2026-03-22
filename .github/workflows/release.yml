@@ -50,9 +50,9 @@ jobs:
           generate_release_notes: true
 
   build-linux:
-    # Build on ubuntu-20.04 (glibc 2.31) for maximum compatibility
-    # with older Linux distributions
+    # Build inside a Debian 11 (bullseye) container for glibc 2.31 compatibility
     runs-on: ubuntu-22.04
+    container: python:3.11-slim-bullseye
     env:
       LINUX_VERSION: "0.1.0"
 
@@ -60,15 +60,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y binutils
+          apt-get update
+          apt-get install -y binutils
 
       - name: Install PyInstaller
         run: pip install pyinstaller
