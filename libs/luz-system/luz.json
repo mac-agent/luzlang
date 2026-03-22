@@ -1,0 +1,5 @@
+{
+    "name": "system",
+    "version": "1.0.0",
+    "description": "System utilities for Luz: platform info, paths, and process execution"
+}
