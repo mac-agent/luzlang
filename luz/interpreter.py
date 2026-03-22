@@ -90,13 +90,17 @@ class Environment:
         if name in self.records:
             self.records[name] = value
             return value
-        # Walk up only if we haven't hit a function boundary.
-        # Stopping at function boundaries prevents accidental closure mutation:
-        #   x = 1
-        #   function f() { x = 2 }   # should NOT change the outer x
+        # Walk up only if we haven't hit a function boundary AND the name
+        # already exists somewhere in the outer scope chain.  This prevents
+        # a variable defined inside an if/while/for block from silently
+        # escaping to the function or global scope.
         if self.parent and not self.is_function_scope:
-            return self.parent.assign(name, value)
-        # Function scope or global: create the variable here rather than raising.
+            try:
+                self.parent.lookup(name)
+                return self.parent.assign(name, value)
+            except UndefinedSymbolFault:
+                pass
+        # Name not found in any reachable outer scope: create it here.
         self.records[name] = value
         return value
 
@@ -233,8 +237,14 @@ class LuzClass:
 
     def find_method(self, name):
         # Walk up the class hierarchy to find a method by name.
+        # visited guards against circular inheritance (A extends B extends A)
+        # which would otherwise loop forever.
+        visited = set()
         cls = self
         while cls is not None:
+            if id(cls) in visited:
+                raise InheritanceFault(f"Circular inheritance detected involving class '{cls.name}'")
+            visited.add(id(cls))
             if name in cls.methods:
                 return cls.methods[name]
             cls = cls.parent
@@ -778,8 +788,11 @@ class Interpreter:
                 self.current_env = temp_env  # Restore the caller's env
 
         except LuzError as e:
+            # Deregister on failure so a corrected retry can succeed.
+            self.imported_files.discard(abs_path)
             raise ImportFault(f"Error in module '{file_path}': {str(e)}")
         except Exception as e:
+            self.imported_files.discard(abs_path)
             raise ImportFault(f"Unexpected error in module '{file_path}': {str(e)}")
 
         return None
@@ -1110,7 +1123,7 @@ class Interpreter:
     def builtin_len(self, obj):
         try:
             return int(len(obj))
-        except:
+        except TypeError:
             raise TypeViolationFault(f"Object of type '{type(obj).__name__}' has no length")
 
     def builtin_append(self, list_obj, element):
