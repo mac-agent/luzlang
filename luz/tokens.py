@@ -116,6 +116,9 @@ class TokenType(Enum):
     # ── Null coalescing ───────────────────────────────────────────────────────
     NULL_COALESCE = auto()  # ?? — returns left if not null, otherwise right
 
+    # ── Membership testing ────────────────────────────────────────────────────
+    NOT_IN = auto()  # not in — synthetic token produced by the parser
+
     # ── Variadic ──────────────────────────────────────────────────────────────
     ELLIPSIS = auto()  # ... — marks a variadic parameter: function f(...args)
 

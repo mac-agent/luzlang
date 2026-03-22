@@ -829,6 +829,16 @@ class Interpreter:
             except TypeError:
                 raise IllegalOperationFault(f"Unsupported operand types for '**': {type(left).__name__} and {type(right).__name__}")
 
+        elif node.op_token.type == TokenType.IN:
+            if not isinstance(right, (list, str)):
+                raise TypeClashFault(f"'in' requires a list or string on the right, got {type(right).__name__}")
+            return left in right
+
+        elif node.op_token.type == TokenType.NOT_IN:
+            if not isinstance(right, (list, str)):
+                raise TypeClashFault(f"'not in' requires a list or string on the right, got {type(right).__name__}")
+            return left not in right
+
         # Equality operators work across any types (mixed-type comparison just
         # returns False/True without raising an error).
         elif node.op_token.type == TokenType.EE:

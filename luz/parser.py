@@ -36,7 +36,7 @@
 # attribute (attached after construction) so the interpreter can report the
 # source line when an error occurs at runtime.
 
-from .tokens import TokenType
+from .tokens import TokenType, Token
 from .exceptions import (
     UnexpectedTokenFault, UnexpectedEOFault, StructureFault,
     ParseFault, ExpressionFault, OperatorFault, SyntaxFault
@@ -963,9 +963,33 @@ class Parser:
         return self.comp_expr()
 
     def comp_expr(self):
-        # All comparison operators share the same precedence level, so they are
-        # all handled by a single bin_op call.
-        return self.bin_op(self.arith_expr, (TokenType.EE, TokenType.NE, TokenType.LT, TokenType.GT, TokenType.LTE, TokenType.GTE))
+        # All comparison operators share the same precedence level.
+        # `in` and `not in` are handled here as membership tests.
+        node = self.arith_expr()
+        while True:
+            if self.current_token.type in (TokenType.EE, TokenType.NE, TokenType.LT, TokenType.GT, TokenType.LTE, TokenType.GTE, TokenType.IN):
+                op_token = self.current_token
+                self.advance()
+                right = self.arith_expr()
+                bin_node = BinOpNode(node, op_token, right)
+                bin_node.line = op_token.line
+                node = bin_node
+            elif self.current_token.type == TokenType.NOT:
+                # Peek ahead: `not in` is a two-token membership operator
+                next_pos = self.pos + 1
+                if next_pos < len(self.tokens) and self.tokens[next_pos].type == TokenType.IN:
+                    op_token = Token(TokenType.NOT_IN, None, self.current_token.line)
+                    self.advance()  # Consume 'not'
+                    self.advance()  # Consume 'in'
+                    right = self.arith_expr()
+                    bin_node = BinOpNode(node, op_token, right)
+                    bin_node.line = op_token.line
+                    node = bin_node
+                else:
+                    break
+            else:
+                break
+        return node
 
     def arith_expr(self):
         # Addition and subtraction bind less tightly than multiplication.
