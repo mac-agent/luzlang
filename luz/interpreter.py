@@ -162,10 +162,7 @@ class LuzFunction:
             elif name in kwargs:
                 env.define(name, kwargs[name])
             else:
-                prev = interpreter.current_env
-                interpreter.current_env = self.closure
                 default_val = interpreter.visit(self.node.defaults[i])
-                interpreter.current_env = prev
                 env.define(name, default_val)
         if variadic:
             env.define(self.node.arg_tokens[fixed].value, list(arguments[fixed:]))
