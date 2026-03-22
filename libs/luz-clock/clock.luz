@@ -1,0 +1,7 @@
+# clock.luz — Luz Clock Library v1.0.0
+# Entry point: imports all modules
+# Usage: import "clock"
+
+import "libs/luz-clock/moment.luz"
+import "libs/luz-clock/format.luz"
+import "libs/luz-clock/calc.luz"

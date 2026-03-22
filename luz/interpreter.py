@@ -355,6 +355,12 @@ class Interpreter:
             'list_dir':    self.builtin_list_dir,
             'make_dir':    self.builtin_make_dir,
             'sleep':       self.builtin_sleep,
+            # Clock primitives (used by luz-clock stdlib)
+            '_clock_now':        self.builtin_clock_now,
+            '_clock_stamp':      self.builtin_clock_stamp,
+            '_clock_fmt':        self.builtin_clock_fmt,
+            '_clock_from_stamp': self.builtin_clock_from_stamp,
+            '_clock_parse':      self.builtin_clock_parse,
         }
 
     # execute_block() runs a list of statements inside a given environment.
@@ -1590,3 +1596,46 @@ class Interpreter:
         import time
         time.sleep(float(seconds))
         return None
+
+    def builtin_clock_now(self):
+        import datetime
+        t = datetime.datetime.now()
+        return {
+            "year":    t.year,
+            "month":   t.month,
+            "day":     t.day,
+            "hour":    t.hour,
+            "min":     t.minute,
+            "sec":     t.second,
+            "ms":      t.microsecond // 1000,
+            "weekday": t.weekday(),   # 0=Monday … 6=Sunday
+            "yearday": t.timetuple().tm_yday,
+        }
+
+    def builtin_clock_stamp(self):
+        import time
+        return time.time()
+
+    def builtin_clock_fmt(self, fmt_str):
+        import datetime
+        return datetime.datetime.now().strftime(str(fmt_str))
+
+    def builtin_clock_from_stamp(self, ts):
+        import datetime
+        t = datetime.datetime.fromtimestamp(float(ts))
+        return {
+            "year":    t.year,
+            "month":   t.month,
+            "day":     t.day,
+            "hour":    t.hour,
+            "min":     t.minute,
+            "sec":     t.second,
+            "ms":      t.microsecond // 1000,
+            "weekday": t.weekday(),
+            "yearday": t.timetuple().tm_yday,
+        }
+
+    def builtin_clock_parse(self, date_str, fmt_str):
+        import datetime, time
+        t = datetime.datetime.strptime(str(date_str), str(fmt_str))
+        return time.mktime(t.timetuple())

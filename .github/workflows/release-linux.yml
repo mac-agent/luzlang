@@ -37,6 +37,7 @@ jobs:
           cp -r libs/luz-random luz-linux/lib/
           cp -r libs/luz-system luz-linux/lib/
           cp -r libs/luz-io luz-linux/lib/
+          cp -r libs/luz-clock luz-linux/lib/
           tar -czf "luz-${GITHUB_REF_NAME}.tar.gz" -C luz-linux .
 
       - name: Create GitHub Release and upload Linux binaries

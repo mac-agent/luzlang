@@ -1,0 +1,54 @@
+# format.luz — Formatting and name helpers
+
+# Format the current date/time using a pattern string.
+# Patterns follow standard directives:
+#   %Y  four-digit year        %m  month (01-12)       %d  day (01-31)
+#   %H  hour 24h (00-23)       %M  minute (00-59)      %S  second (00-59)
+#   %A  full weekday name      %B  full month name      %I  hour 12h (01-12)
+#   %p  AM/PM                  %j  day of year          %Z  timezone name
+function fmt(pattern) {
+    return _clock_fmt(pattern)
+}
+
+# Returns the full name of a weekday (0=Monday … 6=Sunday)
+function day_name(n) {
+    names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    if n < 0 or n > 6 {
+        alert $"day_name: weekday must be 0-6, got {n}"
+    }
+    return names[n]
+}
+
+# Returns the abbreviated weekday name (Mon, Tue, …)
+function day_short(n) {
+    names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    if n < 0 or n > 6 {
+        alert $"day_short: weekday must be 0-6, got {n}"
+    }
+    return names[n]
+}
+
+# Returns the full name of a month (1=January … 12=December)
+function month_name(n) {
+    names = ["January", "February", "March", "April", "May", "June",
+             "July", "August", "September", "October", "November", "December"]
+    if n < 1 or n > 12 {
+        alert $"month_name: month must be 1-12, got {n}"
+    }
+    return names[n - 1]
+}
+
+# Returns the abbreviated month name (Jan, Feb, …)
+function month_short(n) {
+    names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    if n < 1 or n > 12 {
+        alert $"month_short: month must be 1-12, got {n}"
+    }
+    return names[n - 1]
+}
+
+# Returns true if the given year is a leap year
+function is_leap(yr) {
+    return (yr % 4 == 0 and yr % 100 != 0) or yr % 400 == 0
+}

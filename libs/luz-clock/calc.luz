@@ -1,0 +1,58 @@
+# calc.luz — Time arithmetic and conversion
+
+# Seconds elapsed since a given Unix timestamp
+function since(ts) {
+    return _clock_stamp() - ts
+}
+
+# Absolute difference in seconds between two Unix timestamps
+function diff(ts1, ts2) {
+    d = ts2 - ts1
+    if d < 0 { return 0 - d }
+    return d
+}
+
+# Add seconds to a Unix timestamp, returns a new timestamp
+function add_secs(ts, n) {
+    return ts + n
+}
+
+# Add minutes to a Unix timestamp, returns a new timestamp
+function add_mins(ts, n) {
+    return ts + n * 60
+}
+
+# Add hours to a Unix timestamp, returns a new timestamp
+function add_hours(ts, n) {
+    return ts + n * 3600
+}
+
+# Add days to a Unix timestamp, returns a new timestamp
+function add_days(ts, n) {
+    return ts + n * 86400
+}
+
+# Convert a Unix timestamp to a time dict {year, month, day, hour, min, sec, …}
+function from_stamp(ts) {
+    return _clock_from_stamp(ts)
+}
+
+# Parse a date string into a Unix timestamp
+# Example: parse_stamp("2025-01-15", "%Y-%m-%d")
+function parse_stamp(date_str, pattern) {
+    return _clock_parse(date_str, pattern)
+}
+
+# Convert hours, minutes, seconds to total seconds
+function to_secs(h, m, s) {
+    return h * 3600 + m * 60 + s
+}
+
+# Break a seconds value into {hours, mins, secs}
+function from_secs(total) {
+    h = total // 3600
+    remainder = total % 3600
+    m = remainder // 60
+    s = remainder % 60
+    return {"hours": h, "mins": m, "secs": s}
+}
