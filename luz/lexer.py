@@ -414,6 +414,17 @@ class Lexer:
                     tokens.append(Token(TokenType.DOT, None, line))
                     self.advance()
 
+            elif self.current_char == '?':
+                line = self.line
+                self.advance()
+                if self.current_char == '?':
+                    self.advance()
+                    tokens.append(Token(TokenType.NULL_COALESCE, None, line))
+                else:
+                    e = InvalidTokenFault("Expected '?' after '?' for null-coalescing operator '??'")
+                    e.line = line
+                    raise e
+
             else:
                 # No rule matched — the character is not part of the Luz alphabet.
                 e = InvalidTokenFault(f"Illegal character: '{self.current_char}'")

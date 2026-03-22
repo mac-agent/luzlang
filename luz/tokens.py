@@ -113,6 +113,9 @@ class TokenType(Enum):
     MUL_ASSIGN   = auto()  # *=
     DIV_ASSIGN   = auto()  # /=
 
+    # ── Null coalescing ───────────────────────────────────────────────────────
+    NULL_COALESCE = auto()  # ?? — returns left if not null, otherwise right
+
     # ── Variadic ──────────────────────────────────────────────────────────────
     ELLIPSIS = auto()  # ... — marks a variadic parameter: function f(...args)
 

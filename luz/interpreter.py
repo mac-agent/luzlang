@@ -458,6 +458,12 @@ class Interpreter:
             return self.visit(node.value_node)
         return self.visit(node.else_node)
 
+    def visit_NullCoalesceNode(self, node):
+        left = self.visit(node.left)
+        if left is not None:
+            return left
+        return self.visit(node.right)
+
     def visit_TupleNode(self, node):
         return [self.visit(e) for e in node.elements]
 

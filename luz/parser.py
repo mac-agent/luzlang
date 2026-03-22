@@ -99,6 +99,12 @@ class TernaryNode:
         self.else_node = else_node
     def __repr__(self): return f"({self.value_node} if {self.condition_node} else {self.else_node})"
 
+class NullCoalesceNode:
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+    def __repr__(self): return f"({self.left} ?? {self.right})"
+
 # Represents a list literal: [expr, expr, …]
 class ListNode:
     def __init__(self, elements):
@@ -882,7 +888,7 @@ class Parser:
     def expr(self):
         # Top-level expression entry point.
         # Ternary has the lowest precedence: value if condition else other
-        node = self.logical_or()
+        node = self.null_coalesce()
         # Only parse as ternary if 'else' appears before any unmatched '{'.
         # Without this check, `x = value\nif cond { }` would consume the
         # next statement's `if` as a ternary operator.
@@ -926,6 +932,19 @@ class Parser:
                 return True
             i += 1
         return False
+
+    def null_coalesce(self):
+        # `??` sits between ternary and logical_or.
+        # Right-recursive so chaining works: a ?? b ?? c → a ?? (b ?? c)
+        node = self.logical_or()
+        if self.current_token.type == TokenType.NULL_COALESCE:
+            line = self.current_token.line
+            self.advance()
+            right = self.null_coalesce()
+            result = NullCoalesceNode(node, right)
+            result.line = line
+            return result
+        return node
 
     def logical_or(self):
         # `or` has the lowest precedence of any binary operator.
