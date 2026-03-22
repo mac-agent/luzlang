@@ -1026,6 +1026,14 @@ class Interpreter:
             raise TypeViolationFault("For loop step must be numeric")
         if step == 0:
             raise InvalidUsageFault("For loop step cannot be zero")
+        if step > 0 and start_value > end_value:
+            raise InvalidUsageFault(
+                f"For loop start ({start_value}) is greater than end ({end_value}) but step is positive ({step}) — use 'step -1' to go backwards"
+            )
+        if step < 0 and start_value < end_value:
+            raise InvalidUsageFault(
+                f"For loop start ({start_value}) is less than end ({end_value}) but step is negative ({step}) — remove 'step' or use a positive step"
+            )
 
         i = start_value
         previous_env = self.current_env
