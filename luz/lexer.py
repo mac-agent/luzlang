@@ -187,15 +187,39 @@ class Lexer:
                     e = InvalidTokenFault("Unexpected end of string after '\\'")
                     e.line = line
                     raise e
-                escaped = self.ESCAPE_SEQUENCES.get(self.current_char)
-                if escaped is None:
-                    # Luz only recognises the sequences listed in the dict.
-                    # Anything else (e.g. \q) is an error rather than being
-                    # silently passed through, which helps catch typos.
-                    e = InvalidTokenFault(f"Unknown escape sequence '\\{self.current_char}'")
-                    e.line = line
-                    raise e
-                string_val += escaped
+                if self.current_char == 'u':
+                    # \uXXXX — read exactly 4 hex digits
+                    self.advance()
+                    hex_str = ''
+                    for _ in range(4):
+                        if self.current_char is None or self.current_char not in '0123456789abcdefABCDEF':
+                            e = InvalidTokenFault("\\u requires exactly 4 hex digits")
+                            e.line = line
+                            raise e
+                        hex_str += self.current_char
+                        self.advance()
+                    string_val += chr(int(hex_str, 16))
+                    continue
+                elif self.current_char == 'x':
+                    # \xXX — read exactly 2 hex digits
+                    self.advance()
+                    hex_str = ''
+                    for _ in range(2):
+                        if self.current_char is None or self.current_char not in '0123456789abcdefABCDEF':
+                            e = InvalidTokenFault("\\x requires exactly 2 hex digits")
+                            e.line = line
+                            raise e
+                        hex_str += self.current_char
+                        self.advance()
+                    string_val += chr(int(hex_str, 16))
+                    continue
+                else:
+                    escaped = self.ESCAPE_SEQUENCES.get(self.current_char)
+                    if escaped is None:
+                        e = InvalidTokenFault(f"Unknown escape sequence '\\{self.current_char}'")
+                        e.line = line
+                        raise e
+                    string_val += escaped
             else:
                 string_val += self.current_char
             self.advance()
