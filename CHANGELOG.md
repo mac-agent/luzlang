@@ -5,6 +5,17 @@ Format: `## [version] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [1.16.0] - 2026-03-23
+
+### Added
+- Bound methods: retrieving a method from an instance (`m = obj.method`) now returns a bound method that carries `self` automatically — calling `m()` no longer requires passing the instance manually
+- List dot method syntax: `list.append(x)`, `list.pop()`, `list.len()`, `list.contains(x)`, `list.join(sep)`
+- String dot method syntax: `str.uppercase()`, `str.lowercase()`, `str.trim()`, `str.swap(old, new)`, `str.split(sep)` *(pending merge of PR #16)*
+- Versioning policy documentation (`docs/versioning.md`)
+- Automated release notes: tagging `vX.Y.Z` now extracts the matching changelog entry and sets it as the GitHub release body
+
+---
+
 ## [1.15.0] - 2026-03-22
 
 ### Added
