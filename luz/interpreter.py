@@ -1179,19 +1179,40 @@ class Interpreter:
     # the host environment.  They receive already-evaluated Luz values as
     # arguments (Python ints, floats, strs, lists, dicts, bools).
 
+    # luz_repr() formats any Luz value using Luz syntax (used inside collections).
+    # Strings get double quotes, booleans are lowercase, null is "null".
+    @staticmethod
+    def luz_repr(val):
+        if val is None:
+            return "null"
+        if isinstance(val, bool):
+            return "true" if val else "false"
+        if isinstance(val, str):
+            return f'"{val}"'
+        if isinstance(val, list):
+            items = ", ".join(Interpreter.luz_repr(v) for v in val)
+            return f"[{items}]"
+        if isinstance(val, dict):
+            pairs = ", ".join(
+                f"{Interpreter.luz_repr(k)}: {Interpreter.luz_repr(v)}"
+                for k, v in val.items()
+            )
+            return "{" + pairs + "}"
+        return str(val)
+
+    # luz_display() formats a top-level value for write() — strings print
+    # without quotes, everything else delegates to luz_repr().
+    @staticmethod
+    def luz_display(val):
+        if isinstance(val, str):
+            return val
+        return Interpreter.luz_repr(val)
+
     # write() is the standard output function.  Booleans are displayed as
     # lowercase "true"/"false" (matching Luz syntax) rather than Python's
     # "True"/"False".
     def builtin_write(self, *args):
-        formatted_args = []
-        for arg in args:
-            if arg is None:
-                formatted_args.append("null")
-            elif isinstance(arg, bool):
-                formatted_args.append("true" if arg else "false")
-            else:
-                formatted_args.append(arg)
-        print(*formatted_args)
+        print(*[self.luz_display(arg) for arg in args])
         return None
 
     # listen() reads a line from stdin.  It tries to parse the input as a
