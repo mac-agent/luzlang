@@ -352,6 +352,32 @@ res = speak()
 """
         assert env(code, "res") == "Rex"
 
+    def test_self_attr_index(self):
+        code = """
+class T {
+    function init(self) { self.data = [10, 20, 30] }
+    function get(self, i) { return self.data[i] }
+}
+t = T()
+a = t.get(0)
+b = t.get(2)
+"""
+        assert env(code, "a") == 10
+        assert env(code, "b") == 30
+
+    def test_self_attr_index_expression(self):
+        code = """
+class T {
+    function init(self) { self.data = [10, 20, 30] }
+    function last(self) { return self.data[self.data.len() - 1] }
+}
+res = T().last()
+"""
+        assert env(code, "res") == 30
+
+    def test_chained_index_and_dot(self):
+        assert env("l = [[1, 2], [3, 4]]\nv = l[1][0]", "v") == 3
+
 
 # ── Error handling ────────────────────────────────────────────────────────────
 

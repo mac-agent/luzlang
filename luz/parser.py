@@ -1160,41 +1160,40 @@ class Parser:
         else:
             raise ExpressionFault(f"Invalid expression at token: {token}")
 
-        # Handle zero or more chained index operations: base[i][j][k]…
-        # Each iteration wraps the current node in a new IndexAccessNode.
-        while self.current_token.type == TokenType.LBRACKET:
-            bracket_line = self.current_token.line
-            self.advance()  # Consume '['
-            index = self.expr()
-            if self.current_token.type != TokenType.RBRACKET:
-                raise UnexpectedTokenFault("Expected ']'")
-            self.advance()  # Consume ']'
-            index_node = IndexAccessNode(node, index)
-            index_node.line = bracket_line
-            node = index_node
-
-        # Handle zero or more chained dot accesses: obj.attr  or  obj.method(args)
-        # This loop also handles chaining: obj.a.b.c()
-        while self.current_token.type == TokenType.DOT:
-            dot_line = self.current_token.line
-            self.advance()  # Consume '.'
-            if self.current_token.type != TokenType.IDENTIFIER:
-                raise UnexpectedTokenFault("Expected attribute or method name after '.'")
-            attr_token = self.current_token
-            self.advance()  # Consume the attribute/method name
-            if self.current_token.type == TokenType.LPAREN:
-                # Method call: obj.method(args) or obj.method(name: val, …)
-                self.advance()  # Consume '('
-                args, kwargs = self.parse_call_args()
-                if self.current_token.type != TokenType.RPAREN:
-                    raise UnexpectedTokenFault("Expected ')'")
-                self.advance()  # Consume ')'
-                node = MethodCallNode(node, attr_token, args, kwargs)
-                node.line = dot_line
+        # Single postfix loop handling any mix of index ([) and dot (.) access.
+        # This allows chains like: obj.attr[i], obj.method()[j], obj.a[i].b.c()[k]
+        while self.current_token.type in (TokenType.LBRACKET, TokenType.DOT):
+            if self.current_token.type == TokenType.LBRACKET:
+                bracket_line = self.current_token.line
+                self.advance()  # Consume '['
+                index = self.expr()
+                if self.current_token.type != TokenType.RBRACKET:
+                    raise UnexpectedTokenFault("Expected ']'")
+                self.advance()  # Consume ']'
+                index_node = IndexAccessNode(node, index)
+                index_node.line = bracket_line
+                node = index_node
             else:
-                # Attribute read: obj.attr
-                node = AttributeAccessNode(node, attr_token)
-                node.line = dot_line
+                # DOT — attribute read or method call
+                dot_line = self.current_token.line
+                self.advance()  # Consume '.'
+                if self.current_token.type != TokenType.IDENTIFIER:
+                    raise UnexpectedTokenFault("Expected attribute or method name after '.'")
+                attr_token = self.current_token
+                self.advance()  # Consume the attribute/method name
+                if self.current_token.type == TokenType.LPAREN:
+                    # Method call: obj.method(args) or obj.method(name: val, …)
+                    self.advance()  # Consume '('
+                    args, kwargs = self.parse_call_args()
+                    if self.current_token.type != TokenType.RPAREN:
+                        raise UnexpectedTokenFault("Expected ')'")
+                    self.advance()  # Consume ')'
+                    node = MethodCallNode(node, attr_token, args, kwargs)
+                    node.line = dot_line
+                else:
+                    # Attribute read: obj.attr
+                    node = AttributeAccessNode(node, attr_token)
+                    node.line = dot_line
 
         return node
 
