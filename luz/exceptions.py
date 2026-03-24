@@ -50,6 +50,7 @@ class LuzError(Exception):
     def __init__(self, message):
         self.message = message
         self.line = None   # Populated by the interpreter before the error propagates
+        self.col = None
         super().__init__(message)
 
 

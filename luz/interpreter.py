@@ -43,6 +43,7 @@ from .lexer import Lexer
 from .parser import Parser
 import os
 import sys
+import difflib
 
 
 # ── Environment (variable store) ─────────────────────────────────────────────
@@ -70,12 +71,24 @@ class Environment:
 
     # lookup() searches the scope chain upward until it finds the name or
     # reaches the top-level global scope with no parent.
+    
+
     def lookup(self, name):
         if name in self.records:
             return self.records[name]
         if self.parent:
             return self.parent.lookup(name)
-        raise UndefinedSymbolFault(f"Symbol '{name}' is not defined in the current scope")
+        # Collect all names visible from this scope
+        all_names = self._all_names()
+        suggestion = difflib.get_close_matches(name, all_names, n=1, cutoff=0.6)
+        hint = f" — did you mean '{suggestion[0]}'?" if suggestion else ""
+        raise UndefinedSymbolFault(f"Symbol '{name}' is not defined{hint}")
+
+    def _all_names(self):
+        names = list(self.records.keys())
+        if self.parent:
+            names += self.parent._all_names()
+        return names
 
     # assign() updates an existing variable, or creates it at the appropriate
     # scope level if it doesn't exist yet.
@@ -345,6 +358,7 @@ class Interpreter:
         # When an error is raised without a line number, this value is attached
         # to give the user a useful "error at line N" message.
         self.current_line = None
+        self.current_col = None
 
         # builtins maps function names that are always in scope to Python
         # methods on this object.  Checking builtins before looking up in the
@@ -456,8 +470,11 @@ class Interpreter:
             return result
 
         line = getattr(node, 'line', None)
+        col = getattr(node, 'col', None)
         if line is not None:
             self.current_line = line
+        if col is not None:
+            self.current_col = col
 
         method_name = f'visit_{type(node).__name__}'
         method = getattr(self, method_name, self.no_visit_method)
@@ -468,6 +485,7 @@ class Interpreter:
             # not errors and their "line" would be misleading.
             if not isinstance(e, (ReturnException, BreakException, ContinueException)) and e.line is None:
                 e.line = self.current_line
+                e.col = self.current_col
             raise
         except RecursionError:
             raise RuntimeFault("Maximum recursion depth exceeded")
