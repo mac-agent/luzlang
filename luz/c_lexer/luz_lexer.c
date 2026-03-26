@@ -140,6 +140,212 @@ static int tarray_push(TokenArray* arr, CToken token) {
 }
 
 
+/* ── Stage 4: strings and format strings ────────────────────────────────────
+ *
+ * hex_val() converts a single hex character ('0'-'9', 'a'-'f', 'A'-'F') to
+ * its integer value.  The caller must ensure the character is a valid hex
+ * digit (isxdigit) before calling.
+ */
+static int hex_val(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    return                            c - 'A' + 10;
+}
+
+/* utf8_encode() writes the UTF-8 byte sequence for a Unicode code point into
+ * out[] and returns the number of bytes written (1-4).
+ * Used by the \uXXXX escape sequence handler.
+ */
+static int utf8_encode(unsigned int cp, char* out) {
+    if (cp < 0x80) {
+        out[0] = (char)cp;
+        return 1;
+    }
+    if (cp < 0x800) {
+        out[0] = (char)(0xC0 | (cp >> 6));
+        out[1] = (char)(0x80 | (cp & 0x3F));
+        return 2;
+    }
+    if (cp < 0x10000) {
+        out[0] = (char)(0xE0 | (cp >> 12));
+        out[1] = (char)(0x80 | ((cp >> 6) & 0x3F));
+        out[2] = (char)(0x80 | (cp & 0x3F));
+        return 3;
+    }
+    out[0] = (char)(0xF0 | (cp >> 18));
+    out[1] = (char)(0x80 | ((cp >> 12) & 0x3F));
+    out[2] = (char)(0x80 | ((cp >> 6)  & 0x3F));
+    out[3] = (char)(0x80 | (cp & 0x3F));
+    return 4;
+}
+
+/* lex_string() is called when current_char is '"'.
+ * It allocates a buffer sized to the whole source (safe upper bound — no
+ * string can be longer than the source itself), then fills it character by
+ * character, resolving escape sequences along the way.
+ *
+ * Supported escapes:  \n  \t  \r  \\  \"  \xXX  \uXXXX
+ *
+ * On any error (unterminated, bad escape, bad hex digits) the buffer is
+ * freed and a TT_ERROR token is returned so the Python side can report a
+ * meaningful message.
+ */
+static CToken lex_string(CLexer* lex) {
+    int   line = lex->line, col = lex->col;
+    char* buf  = (char*)malloc(lex->length + 1);
+    int   i    = 0;
+    CToken t;
+
+    if (buf == NULL)
+        return make_value_token(TT_ERROR, "out of memory", line, col);
+
+    advance(lex);   /* consume opening '"' */
+
+    while (current_char(lex) != '\0' && current_char(lex) != '"') {
+        if (current_char(lex) == '\\') {
+            advance(lex);   /* consume '\' */
+            char esc = current_char(lex);
+
+            if (esc == '\0') {
+                free(buf);
+                return make_value_token(TT_ERROR, "unexpected end of string after '\\'", line, col);
+            }
+
+            if (esc == 'u') {
+                /* \uXXXX — exactly 4 hex digits → UTF-8 bytes */
+                unsigned int cp = 0;
+                int j;
+                advance(lex);   /* consume 'u' */
+                for (j = 0; j < 4; j++) {
+                    if (!isxdigit((unsigned char)current_char(lex))) {
+                        free(buf);
+                        return make_value_token(TT_ERROR, "\\u requires exactly 4 hex digits", line, col);
+                    }
+                    cp = cp * 16 + (unsigned int)hex_val(current_char(lex));
+                    advance(lex);
+                }
+                i += utf8_encode(cp, buf + i);
+                continue;
+            }
+
+            if (esc == 'x') {
+                /* \xXX — exactly 2 hex digits → single byte */
+                unsigned int cp = 0;
+                int j;
+                advance(lex);   /* consume 'x' */
+                for (j = 0; j < 2; j++) {
+                    if (!isxdigit((unsigned char)current_char(lex))) {
+                        free(buf);
+                        return make_value_token(TT_ERROR, "\\x requires exactly 2 hex digits", line, col);
+                    }
+                    cp = cp * 16 + (unsigned int)hex_val(current_char(lex));
+                    advance(lex);
+                }
+                buf[i++] = (char)cp;
+                continue;
+            }
+
+            /* Simple single-character escapes */
+            switch (esc) {
+                case 'n':  buf[i++] = '\n'; break;
+                case 't':  buf[i++] = '\t'; break;
+                case 'r':  buf[i++] = '\r'; break;
+                case '\\': buf[i++] = '\\'; break;
+                case '"':  buf[i++] = '"';  break;
+                default:
+                    free(buf);
+                    return make_value_token(TT_ERROR, "unknown escape sequence", line, col);
+            }
+            advance(lex);   /* consume the escape letter */
+            continue;
+        }
+
+        buf[i++] = current_char(lex);
+        advance(lex);
+    }
+
+    if (current_char(lex) != '"') {
+        free(buf);
+        return make_value_token(TT_ERROR, "unterminated string literal", line, col);
+    }
+    advance(lex);   /* consume closing '"' */
+
+    buf[i] = '\0';
+    t = make_value_token(TT_STRING, buf, line, col);
+    free(buf);
+    return t;
+}
+
+
+/* lex_fstring() is called after the '$' has already been consumed and
+ * current_char is confirmed to be '"'.
+ * It works like lex_string() with two differences:
+ *   1. Content inside { } is copied verbatim (no escape processing) so the
+ *      parser receives the raw embedded expression text.
+ *   2. The closing '"' is only recognised when brace_depth is zero.
+ * Only the basic five escapes are supported outside braces (\n \t \r \\ \").
+ * \uXXXX and \xXX are not supported in format strings (matches Python lexer).
+ */
+static CToken lex_fstring(CLexer* lex, int line, int col) {
+    char* buf        = (char*)malloc(lex->length + 1);
+    int   i          = 0;
+    int   brace_depth = 0;
+    CToken t;
+
+    if (buf == NULL)
+        return make_value_token(TT_ERROR, "out of memory", line, col);
+
+    advance(lex);   /* consume opening '"' */
+
+    while (current_char(lex) != '\0') {
+        char c = current_char(lex);
+
+        /* Closing quote only ends the string when we are outside all braces */
+        if (brace_depth == 0 && c == '"')
+            break;
+
+        if (c == '{') { brace_depth++; buf[i++] = c; advance(lex); continue; }
+        if (c == '}') { brace_depth--; buf[i++] = c; advance(lex); continue; }
+
+        /* Escape sequences only apply outside braces */
+        if (c == '\\' && brace_depth == 0) {
+            advance(lex);   /* consume '\' */
+            char esc = current_char(lex);
+            if (esc == '\0') {
+                free(buf);
+                return make_value_token(TT_ERROR, "unterminated format string after '\\'", line, col);
+            }
+            switch (esc) {
+                case 'n':  buf[i++] = '\n'; break;
+                case 't':  buf[i++] = '\t'; break;
+                case 'r':  buf[i++] = '\r'; break;
+                case '\\': buf[i++] = '\\'; break;
+                case '"':  buf[i++] = '"';  break;
+                default:
+                    free(buf);
+                    return make_value_token(TT_ERROR, "unknown escape sequence in format string", line, col);
+            }
+            advance(lex);   /* consume the escape letter */
+            continue;
+        }
+
+        buf[i++] = c;
+        advance(lex);
+    }
+
+    if (current_char(lex) != '"') {
+        free(buf);
+        return make_value_token(TT_ERROR, "unterminated format string", line, col);
+    }
+    advance(lex);   /* consume closing '"' */
+
+    buf[i] = '\0';
+    t = make_value_token(TT_FSTRING, buf, line, col);
+    free(buf);
+    return t;
+}
+
+
 /* ── Stage 3: identifiers and keywords ──────────────────────────────────────
  *
  * Keyword table: a flat array of (string, TokenType) pairs.
@@ -396,6 +602,24 @@ CToken* lex_all(CLexer* lex, int* out_count) {
             continue;
         }
 
+        /* Regular strings */
+        if (current_char(lex) == '"') {
+            tarray_push(&arr, lex_string(lex));
+            continue;
+        }
+
+        /* Format strings: '$"..."' — consume '$', then delegate */
+        if (current_char(lex) == '$') {
+            int fline = lex->line, fcol = lex->col;
+            advance(lex);   /* consume '$' */
+            if (current_char(lex) != '"') {
+                tarray_push(&arr, make_value_token(TT_ERROR, "$", fline, fcol));
+                continue;
+            }
+            tarray_push(&arr, lex_fstring(lex, fline, fcol));
+            continue;
+        }
+
         /* Identifiers and keywords */
         if (isalpha((unsigned char)current_char(lex)) || current_char(lex) == '_') {
             tarray_push(&arr, lex_identifier(lex));
@@ -460,6 +684,8 @@ static const char* token_type_name(TokenType t) {
         case TT_RBRACE:       return "RBRACE";
         case TT_COMMA:        return "COMMA";
         case TT_COLON:        return "COLON";
+        case TT_STRING:       return "STRING";
+        case TT_FSTRING:      return "FSTRING";
         case TT_IDENTIFIER:   return "IDENTIFIER";
         case TT_IF:           return "IF";
         case TT_ELIF:         return "ELIF";
@@ -610,6 +836,55 @@ int main(void) {
     lexer_init(&lex, "_private _x2");
     tokens = lex_all(&lex, &count);
     printf("  expect: IDENTIFIER(_private)  IDENTIFIER(_x2)  EOF\n");
+    print_and_free(tokens, count);
+
+    /* ── Test 14: simple string ──────────────────────────────────────────── */
+    printf("\nTest 14: simple string\n");
+    lexer_init(&lex, "\"hello\"");
+    tokens = lex_all(&lex, &count);
+    printf("  expect: STRING(hello)  EOF\n");
+    print_and_free(tokens, count);
+
+    /* ── Test 15: escape sequences ───────────────────────────────────────── */
+    printf("\nTest 15: escape sequences\n");
+    lexer_init(&lex, "\"a\\nb\\tc\"");
+    tokens = lex_all(&lex, &count);
+    printf("  expect: STRING with newline and tab embedded\n");
+    if (count >= 1 && tokens[0].value) {
+        printf("  value bytes: ");
+        int j;
+        for (j = 0; tokens[0].value[j] != '\0'; j++)
+            printf("%d ", (unsigned char)tokens[0].value[j]);
+        printf("  (expect: 97 10 98 9 99)\n");
+    }
+    print_and_free(tokens, count);
+
+    /* ── Test 16: hex escape ─────────────────────────────────────────────── */
+    printf("\nTest 16: \\x41 = 'A'\n");
+    lexer_init(&lex, "\"\\x41\"");
+    tokens = lex_all(&lex, &count);
+    printf("  expect: STRING(A)  EOF\n");
+    print_and_free(tokens, count);
+
+    /* ── Test 17: unicode escape ─────────────────────────────────────────── */
+    printf("\nTest 17: \\u0041 = 'A'\n");
+    lexer_init(&lex, "\"\\u0041\"");
+    tokens = lex_all(&lex, &count);
+    printf("  expect: STRING(A)  EOF\n");
+    print_and_free(tokens, count);
+
+    /* ── Test 18: format string ──────────────────────────────────────────── */
+    printf("\nTest 18: format string\n");
+    lexer_init(&lex, "$\"hello {name}!\"");
+    tokens = lex_all(&lex, &count);
+    printf("  expect: FSTRING(hello {name}!)  EOF\n");
+    print_and_free(tokens, count);
+
+    /* ── Test 19: real Luz snippet with strings ───────────────────────────── */
+    printf("\nTest 19: Luz snippet\n");
+    lexer_init(&lex, "x = \"world\"");
+    tokens = lex_all(&lex, &count);
+    printf("  expect: IDENTIFIER(x) ASSIGN STRING(world) EOF\n");
     print_and_free(tokens, count);
 
     printf("\nStage 2 OK\n");
