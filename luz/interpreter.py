@@ -402,6 +402,20 @@ class Interpreter:
             'sign': self.builtin_sign,
             'odd': self.builtin_odd,
             'even': self.builtin_even,
+            # Trigonometric Functions - all angles in radians
+            'sin': self.builtin_sin,
+            'cos': self.builtin_cos,
+            'tan': self.builtin_tan,
+            'asin': self.builtin_asin,
+            'acos': self.builtin_acos,
+            'atan': self.builtin_atan,
+            'atan2': self.builtin_atan2,
+            # Exponential and logarithmic
+            'exp': self.builtin_exp,
+            'ln': self.builtin_ln,
+            'log2': self.builtin_log2,
+            'log10': self.builtin_log10,
+            'pow': self.builtin_pow,
             '_rand_float': self.builtin_rand_float,
             '_rand_int': self.builtin_rand_int,
             '_rand_seed': self.builtin_rand_seed,
@@ -1607,6 +1621,77 @@ class Interpreter:
         self._require_num(low, 'clamp')
         self._require_num(high, 'clamp')
         return max(low, min(x, high))
+
+    def builtin_sin(self, x):
+        self._require_num(x, 'sin')
+        import math
+        return math.sin(x)
+    
+    def builtin_cos(self, x):
+        self._require_num(x, 'cos')
+        import math
+        return math.cos(x)
+    
+    def builtin_tan(self, x):
+        self._require_num(x, 'tan')
+        import math
+        return math.tan(x)
+    
+    def builtin_asin(self, x):
+        self._require_num(x, 'asin')
+        if x < -1 or x > 1:
+            raise NumericFault(f"asin() domain error: argument must be in [-1, 1], got {x}")
+        import math
+        return math.asin(x)
+    
+    def builtin_acos(self, x):
+        self._require_num(x, 'acos')
+        if x < -1 or x > 1:
+            raise NumericFault(f"acos() domain error: argument must be in [-1, 1], got {x}")
+        import math
+        return math.acos(x)
+
+    def builtin_atan(self, x):
+        self._require_num(x, 'atan')
+        import math
+        return math.atan(x)
+    
+    def builtin_atan2(self, y, x):
+        self._require_num(y, 'atan2')
+        self._require_num(x, 'atan2')
+        import math
+        return math.atan2(y, x)
+    
+    def builtin_exp(self, x):
+        self._require_num(x, 'exp')
+        import math
+        return math.log(x)
+    
+    def builtin_ln(self, x):
+        self._require_num(x, 'ln')
+        if x <= 0:
+            raise NumericFault(f"ln() domain error: argument must be positive, got {x}")
+        import math
+        return math.log(x)
+    
+    def builtin_log2(self, x):
+        self._require_num(x, 'log2')
+        if x <= 0:
+            raise NumericFault(f"log2() domain error: argument must be positive, got {x}")
+        import math
+        return math.log2(x)
+
+    def builtin_log10(self, x):
+        self._require_num(x, 'log10')
+        if x <= 0:
+            raise NumericFault(f"log10() domain error: argument must be positive, got {x}")
+        import math
+        return math.log10(x)
+    
+    def builtin_pow(self, base, exp):
+        self._require_num(base, 'pow')
+        self._require_num(exp, 'pow')
+        return base ** exp
 
     # max(a, b) or max(list) — returns the largest value.
     def builtin_max(self, *args):
