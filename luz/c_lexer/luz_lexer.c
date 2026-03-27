@@ -512,7 +512,8 @@ static CToken lex_operator(CLexer* lex) {
 
         case '=':
             advance(lex);
-            if (p == '=') { advance(lex); return make_token(TT_EE,     line, col); }
+            if (p == '=') { advance(lex); return make_token(TT_EE,    line, col); }
+            if (p == '>') { advance(lex); return make_token(TT_ARROW,  line, col); }
             return make_token(TT_ASSIGN, line, col);
 
         case '!':
