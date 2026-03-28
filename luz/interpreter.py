@@ -171,12 +171,16 @@ class LuzFunction:
         for i in range(fixed):
             name = self.node.arg_tokens[i].value
             if i < len(arguments):
-                env.define(name, arguments[i])
+                value = arguments[i]
             elif name in kwargs:
-                env.define(name, kwargs[name])
+                value = kwargs[name]
             else:
-                default_val = interpreter.visit(self.node.defaults[i])
-                env.define(name, default_val)
+                value = interpreter.visit(self.node.defaults[i])
+            type_ann = self.node.arg_types[i]
+            if type_ann is not None and not Interpreter._check_type(value, type_ann):
+                raise TypeViolationFault(f"Argument '{name}' expects type '{type_ann}', "
+                                         f"got '{Interpreter._luz_type_name(value)}'")
+            env.define(name, value)
         if variadic:
             env.define(self.node.arg_tokens[fixed].value, list(arguments[fixed:]))
 
@@ -1303,7 +1307,19 @@ class Interpreter:
             return value.luz_class.name == type_name
         return False
     
+    @staticmethod
+    def _luz_type_name(value):
+        if value is None: return 'null'
+        if isinstance(value, bool): return 'bool'
+        if isinstance(value, float): return 'float'
+        if isinstance(value, int): return 'int'
+        if isinstance(value, str): return 'string'
+        if isinstance(value, dict): return 'dict'
+        if isinstance(value, list): return 'list'
+        if isinstance(value, LuzInstance): return value.luz_class.name
+        return type(value).__name__
     
+
     # write() is the standard output function.  Booleans are displayed as
     # lowercase "true"/"false" (matching Luz syntax) rather than Python's
     # "True"/"False".
