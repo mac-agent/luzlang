@@ -88,3 +88,6 @@ Trig and log functions (`sin`, `cos`, `exp`, `ln`, etc.) are implemented as **na
 - `Makefile` — uses MSYS2's `bash` + `gcc` on Windows (requires MSYS2 at `C:/msys64`)
 - The `.dll`/`.so` is gitignored; run `make` to build it locally
 - `INT` and `FLOAT` token values must be converted from string to `int`/`float` in the bridge
+
+## IMPORTANT:
+- Any bugs encountered, whether in the code or the language, while adding something else, should be created as an issue using the GitHub CLI so they can be resolved later.
