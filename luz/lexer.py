@@ -428,6 +428,9 @@ class Lexer:
                 if self.current_char == '=':
                     self.advance()
                     tokens.append(Token(TokenType.MINUS_ASSIGN, None, line, col))
+                elif self.current_char == '>':
+                    self.advance()
+                    tokens.append(Token(TokenType.ARROW, None, line, col))
                 else:
                     tokens.append(Token(TokenType.MINUS, None, line, col))
 
