@@ -742,7 +742,7 @@ class Parser:
             return_type = 'null' if self.current_token.type == TokenType.NULL else self.current_token.value 
             self.advance()
 
-        if self.current_tokenAho.type != TokenType.LBRACE:
+        if self.current_token.type != TokenType.LBRACE:
             raise StructureFault("Expected '{'")
         self.advance()  # Consume '{'
 
