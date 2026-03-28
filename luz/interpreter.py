@@ -1279,7 +1279,31 @@ class Interpreter:
         if isinstance(val, str):
             return val
         return Interpreter.luz_repr(val)
-
+    
+    @staticmethod
+    def _check_type(value, type_name):
+        if type_name == 'int':
+            return isinstance(value, int) and not isinstance(value, bool)
+        if type_name == 'float':
+            return isinstance(value, float)
+        if type_name == 'number':
+            return isinstance(value, (int, float)) and not isinstance(value, bool)
+        if type_name == 'string':
+            return isinstance(value, str)
+        if type_name == 'bool':
+            return isinstance(value, bool)
+        if type_name == 'list':
+            return isinstance(value, list)
+        if type_name == 'dict':
+            return isinstance(value, dict)
+        if type_name == 'null':
+            return value is None
+        # Class name - check instance and its class name
+        if isinstance(value, LuzInstance):
+            return value.luz_class.name == type_name
+        return False
+    
+    
     # write() is the standard output function.  Booleans are displayed as
     # lowercase "true"/"false" (matching Luz syntax) rather than Python's
     # "True"/"False".
