@@ -193,7 +193,13 @@ class LuzFunction:
         try:
             interpreter.execute_block(self.node.block, env)
         except ReturnException as e:
-            return e.value
+            ret = e.value
+            if self.node.return_type is not None and not Interpreter._check_type(ret, self.node.return_type):
+                raise TypeViolationFault(f"Function '{self.node.name_token.value}' must return '{self.node.return_type}', "
+                                         f"got '{Interpreter._luz_type_name(ret)}'")
+            return ret
+        if self.node.return_type is not None and self.node.return_type != 'null':
+            raise TypeViolationFault(f"Function '{self.node.name_token.value}' must return '{self.node.return_type}', got 'null'")
         return None
 
 
