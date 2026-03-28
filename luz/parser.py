@@ -228,9 +228,11 @@ class AnonFuncNode:
 # defaults is a parallel list: None means required, an ASTNode means optional.
 # variadic: if True, the last parameter collects all remaining arguments as a list.
 class FuncDefNode:
-    def __init__(self, name_token, arg_tokens, block, defaults=None, variadic=False):
+    def __init__(self, name_token, arg_tokens, block, defaults=None, variadic=False, arg_types=None, return_type=None):
         self.name_token = name_token
         self.arg_tokens = arg_tokens
+        self.arg_types = arg_types if defaults is not None else [None] * len(arg_tokens)
+        self.return_type = return_type
         self.defaults = defaults if defaults is not None else [None] * len(arg_tokens)
         self.variadic = variadic  # True if the last param is ...name
         self.block = block
