@@ -130,6 +130,45 @@ function factorial(n) {
 write(factorial(6))   # 720
 ```
 
+## Type annotations
+
+Parameters and return values can be annotated with a type. The type is checked at call time — a mismatch raises a `TypeViolationFault`.
+
+```
+function add(a: int, b: int) -> int {
+    return a + b
+}
+
+write(add(2, 3))   # 5
+
+attempt {
+    add(2, "x")
+} rescue (e) {
+    write(e)   # TypeViolationFault: Argument 'b' expects type 'int', got 'string'
+}
+```
+
+Return type annotations are also enforced:
+
+```
+function positive(x: float) -> bool {
+    return x > 0
+}
+```
+
+For class types, a subclass satisfies a parent type annotation:
+
+```
+class Animal {}
+class Dog extends Animal {}
+
+function greet(a: Animal) { write("hello") }
+
+greet(Dog())   # works — Dog extends Animal
+```
+
+Valid type names: `int`, `float`, `number`, `string`, `bool`, `list`, `dict`, `null`, or any class name. Unannotated parameters accept any type.
+
 ## Higher-order functions
 
 ```

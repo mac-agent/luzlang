@@ -86,6 +86,26 @@ g = GuideDog("Buddy", "Retriever")
 g.speak()   # Buddy is a guide dog and stays quiet.
 ```
 
+## Type annotations and inheritance
+
+Type-annotated function parameters accept instances of the declared class **and any subclass**:
+
+```
+class Animal {}
+class Dog extends Animal {}
+class Labrador extends Dog {}
+
+function greet(a: Animal) {
+    write("hello")
+}
+
+greet(Animal())    # ok
+greet(Dog())       # ok — Dog extends Animal
+greet(Labrador())  # ok — Labrador extends Dog extends Animal
+```
+
+This works at any depth in the hierarchy.
+
 ## instanceof
 
 `instanceof(obj, Class)` returns `true` if `obj` is an instance of `Class` or any of its subclasses. It walks the full inheritance hierarchy:

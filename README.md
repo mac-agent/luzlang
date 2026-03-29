@@ -32,7 +32,7 @@ for i = 1 to 5 {
 - **Error handling** — `attempt / rescue / finally` blocks and `alert`
 - **Modules** — `import`, `from "x" import name`, `import "x" as alias`
 - **Package manager** — [Ray](#package-manager-ray), installs packages from GitHub
-- **Standard library** — `luz-math`, `luz-random`, `luz-io`, `luz-system`, `luz-clock`
+- **Standard library** — `luz-math`, `luz-random`, `luz-io`, `luz-system`, `luz-clock`, `luz-types` 
 - **Helpful errors** — every error includes the line number
 - **REPL** — interactive shell for quick experimentation
 - **VS Code extension** — syntax highlighting, autocompletion, error detection, hover docs, snippets
@@ -160,7 +160,7 @@ Install from the `vscode-luz/` folder for full language support:
 ## Documentation
 
 Full language reference, built-in functions, and architecture guide:
-**[elabsurdo984.github.io/luz-lang](https://elabsurdo984.github.io/luz-lang/)**
+**[elabsurdo984.github.io/luzlang](https://elabsurdo984.github.io/luzlang/)**
 
 ## License
 

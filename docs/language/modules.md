@@ -40,6 +40,31 @@ import "b.luz"
 import "a.luz"   # skipped — a.luz is already being executed
 ```
 
+## Selective import
+
+Use `from "file" import name1, name2` to import only specific names into the current scope:
+
+```
+from "utils.luz" import format_date, parse_date
+
+write(format_date(today))
+```
+
+If any of the requested names does not exist in the module, an `ImportFault` is raised and **nothing** is imported — it's all-or-nothing.
+
+## Module alias
+
+Use `import "file" as alias` to wrap the module's exports in a namespace object. This avoids polluting the global scope:
+
+```
+import "utils.luz" as utils
+
+write(utils.format_date(today))
+write(utils.parse_date("2026-01-01"))
+```
+
+Access any exported name with dot syntax: `alias.name`.
+
 ## Example
 
 `greetings.luz`:

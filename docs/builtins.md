@@ -75,6 +75,7 @@ to_num("3.14")   # 3.14
 | `append(list, value)` | Add element to the end (modifies in place) |
 | `pop(list)` | Remove and return the last element |
 | `pop(list, index)` | Remove and return the element at index |
+| `insert(list, index, value)` | Insert value at index, shifting elements right |
 
 ```
 nums = [10, 20, 30]
@@ -82,6 +83,10 @@ append(nums, 40)
 write(len(nums))      # 4
 write(pop(nums))      # 40
 write(pop(nums, 0))   # 10
+
+items = [1, 2, 4]
+insert(items, 2, 3)
+write(items)          # [1, 2, 3, 4]
 ```
 
 ---

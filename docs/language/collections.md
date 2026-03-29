@@ -34,6 +34,22 @@ for fruit in fruits {
 }
 ```
 
+### Slicing
+
+Extract a sub-list using `[start:end]` or `[start:end:step]`. Indices are end-exclusive. Negative indices count from the end.
+
+```
+nums = [10, 20, 30, 40, 50]
+
+write(nums[1:3])     # [20, 30]
+write(nums[:3])      # [10, 20, 30]
+write(nums[2:])      # [30, 40, 50]
+write(nums[::2])     # [10, 30, 50]   (every other element)
+write(nums[::-1])    # [50, 40, 30, 20, 10]  (reversed)
+```
+
+Slice indices must be integers. A step of `0` raises a `ZeroDivisionFault`.
+
 ### List built-ins
 
 | Function | Description |
@@ -42,10 +58,17 @@ for fruit in fruits {
 | `append(list, value)` | Add element to the end |
 | `pop(list)` | Remove and return the last element |
 | `pop(list, index)` | Remove and return element at index |
+| `insert(list, index, value)` | Insert value at index, shifting elements right |
+
+```
+nums = [1, 2, 4, 5]
+insert(nums, 2, 3)
+write(nums)   # [1, 2, 3, 4, 5]
+```
 
 ### List dot methods
 
-All list operations are also available as dot methods:
+All list operations are also available as dot methods. Calling a method with the wrong number of arguments raises an `ArityFault`.
 
 ```
 nums = [1, 2, 3]
@@ -79,6 +102,14 @@ Strings support indexing and negative indices:
 s = "hello"
 write(s[0])    # h
 write(s[-1])   # o
+```
+
+Strings also support slicing:
+
+```
+write(s[1:3])   # el
+write(s[:3])    # hel
+write(s[1:])    # ello
 ```
 
 ---
@@ -117,3 +148,25 @@ for key in person {
 | `keys(dict)` | Returns a list of all keys |
 | `values(dict)` | Returns a list of all values |
 | `remove(dict, key)` | Remove key and return its value |
+
+### Dictionary dot methods
+
+All dictionary operations are also available as dot methods:
+
+```
+person = {"name": "Alice", "age": 30}
+
+write(person.keys())          # ["name", "age"]
+write(person.values())        # ["Alice", 30]
+write(person.len())           # 2
+write(person.contains("age")) # true
+person.remove("age")
+```
+
+| Method | Equivalent built-in |
+|---|---|
+| `dict.keys()` | `keys(dict)` |
+| `dict.values()` | `values(dict)` |
+| `dict.len()` | `len(dict)` |
+| `dict.contains(key)` | `key in dict` |
+| `dict.remove(key)` | `remove(dict, key)` |

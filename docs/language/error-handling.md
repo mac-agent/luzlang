@@ -54,6 +54,22 @@ All Luz errors fall into four categories:
 
 Every error message includes the source line number.
 
+## finally
+
+A `finally` block always runs after `attempt` and `rescue`, whether or not an error was raised. Use it for cleanup that must always happen:
+
+```
+attempt {
+    x = 10 / 0
+} rescue (e) {
+    write("Caught: " + e)
+} finally {
+    write("This always runs")
+}
+```
+
+If an error is pending from the `rescue` block and `finally` also raises, the original error is preserved and re-raised after `finally` completes.
+
 ## Nested attempt blocks
 
 `attempt` blocks can be nested. The innermost matching `rescue` handles the error:
