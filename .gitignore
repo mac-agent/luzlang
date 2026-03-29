@@ -29,3 +29,5 @@ luz/c_lexer/lexer_test
 luz/c_lexer/*.dll
 luz/c_lexer/*.so
 tests/crashes/
+
+.claude/
