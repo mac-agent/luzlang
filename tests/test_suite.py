@@ -285,6 +285,26 @@ class TestCollections:
     def test_list_dot_join(self):
         assert env('l = ["a", "b", "c"]\nv = l.join(", ")', "v") == "a, b, c"
 
+    def test_list_append_missing_arg_raises(self):
+        with pytest.raises(ArityFault):
+            val('[1, 2].append()')
+
+    def test_list_contains_missing_arg_raises(self):
+        with pytest.raises(ArityFault):
+            val('[1, 2].contains()')
+
+    def test_list_join_missing_arg_raises(self):
+        with pytest.raises(ArityFault):
+            val('[1, 2].join()')
+
+    def test_string_swap_missing_arg_raises(self):
+        with pytest.raises(ArityFault):
+            val('"hello".swap("l")')
+
+    def test_string_swap_no_args_raises(self):
+        with pytest.raises(ArityFault):
+            val('"hello".swap()')
+
 
 # ── OOP ───────────────────────────────────────────────────────────────────────
 
@@ -419,6 +439,19 @@ log = ""
 attempt { alert("fail")\nlog = "unreachable" } rescue { log = "rescued " } finally { log = log + "finally" }
 """, "log") == "rescued finally"
 
+    def test_finally_rescue_error_preserved(self):
+        # Error from rescue must survive even if finally also raises
+        with pytest.raises(UserFault):
+            run("""
+attempt {
+    alert "original"
+} rescue (e) {
+    alert "from rescue"
+} finally {
+    alert "from finally"
+}
+""")
+
     def test_alert_raises(self):
         with pytest.raises(UserFault):
             run('alert("intentional")')
@@ -482,6 +515,17 @@ class TestImports:
             interp.visit(Parser(Lexer('import "nonexistent.luz"').get_tokens()).parse())
         # Should not be stuck in imported_files
         assert not any("nonexistent" in p for p in interp.imported_files)
+
+    def test_from_import_missing_name_leaves_nothing(self):
+        # If one name doesn't exist, nothing should be defined
+        from luz.exceptions import ImportFault
+        interp = Interpreter()
+        with pytest.raises(ImportFault):
+            interp.visit(Parser(Lexer(
+                'from "libs/luz-math/constants.luz" import PI, DOES_NOT_EXIST'
+            ).get_tokens()).parse())
+        with pytest.raises(UndefinedSymbolFault):
+            interp.global_env.lookup("PI")
 
 
 class TestBuiltinIndexInsert:
@@ -750,6 +794,14 @@ class TestDictDotMethods:
 
     def test_chained_keys_len(self):
         assert val('{"x": 1, "y": 2, "z": 3}.keys().len()') == 3
+
+    def test_contains_missing_arg_raises(self):
+        with pytest.raises(ArityFault):
+            val('{"a": 1}.contains()')
+
+    def test_remove_missing_arg_raises(self):
+        with pytest.raises(ArityFault):
+            val('{"a": 1}.remove()')
 
 
 class TestSlices:
