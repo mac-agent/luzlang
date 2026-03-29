@@ -653,7 +653,7 @@ class Interpreter:
         var_token, iterable_node = clauses[depth]
         iterable = self.visit(iterable_node)
         if not isinstance(iterable, (list, str)):
-            raise TypeClashFault(f"List comprehension requires a list or string, got {type(iterable).__name__}")
+            raise TypeClashFault(f"List comprehension requires a list or string, got '{self._luz_type_name(iterable)}'")
         for item in iterable:
             self.current_env.define(var_token.value, item)
             if depth + 1 < len(clauses):
@@ -682,7 +682,7 @@ class Interpreter:
 
         if isinstance(base, list):
             if not isinstance(index, int):
-                raise TypeViolationFault(f"List index must be an integer, not {type(index).__name__}")
+                raise TypeViolationFault(f"List index must be an integer, not '{self._luz_type_name(index)}'")
             if index < 0:
                 index = len(base) + index
             try:
@@ -691,7 +691,7 @@ class Interpreter:
                 raise IndexFault(f"Index {index} is out of range for list of size {len(base)}")
         elif isinstance(base, str):
             if not isinstance(index, int):
-                raise TypeViolationFault(f"String index must be an integer, not {type(index).__name__}")
+                raise TypeViolationFault(f"String index must be an integer, not '{self._luz_type_name(index)}'")
             if index < 0:
                 index = len(base) + index
             try:
@@ -706,9 +706,9 @@ class Interpreter:
             except TypeError:
                 # Python raises TypeError when you try to use an unhashable value
                 # (e.g. a list) as a dict key.
-                raise TypeViolationFault(f"Unhashable type: '{type(index).__name__}' cannot be used as a dictionary key")
+                raise TypeViolationFault(f"Unhashable type: '{self._luz_type_name(index)}' cannot be used as a dictionary key")
         else:
-            raise InvalidUsageFault(f"Type '{type(base).__name__}' does not support indexing")
+            raise InvalidUsageFault(f"Type '{self._luz_type_name(base)}' does not support indexing")
 
     # visit_IndexAssignNode() handles `base[index] = value`.
     # Because lists and dicts in Luz are passed by reference (they are plain
@@ -721,7 +721,7 @@ class Interpreter:
 
         if isinstance(base, list):
             if not isinstance(index, int):
-                raise TypeViolationFault(f"List index must be an integer, not {type(index).__name__}")
+                raise TypeViolationFault(f"List index must be an integer, not '{self._luz_type_name(index)}'")
             if index < 0:
                 index = len(base) + index
             try:
@@ -734,9 +734,9 @@ class Interpreter:
                 base[index] = value
                 return value
             except TypeError:
-                raise TypeViolationFault(f"Unhashable key type: '{type(index).__name__}'")
+                raise TypeViolationFault(f"Unhashable key type: '{self._luz_type_name(index)}'")
         else:
-            raise InvalidUsageFault(f"Type '{type(base).__name__}' does not support index assignment")
+            raise InvalidUsageFault(f"Type '{self._luz_type_name(base)}' does not support index assignment")
 
     # ── Error handling ────────────────────────────────────────────────────────
 
@@ -945,7 +945,7 @@ class Interpreter:
             return not res
         if node.op_token.type == TokenType.MINUS:
             if not isinstance(res, (int, float)):
-                raise TypeClashFault(f"Unary '-' cannot be applied to type '{type(res).__name__}'")
+                raise TypeClashFault(f"Unary '-' cannot be applied to type '{self._luz_type_name(res)}'")
             return -res
         return res
 
@@ -985,13 +985,13 @@ class Interpreter:
             try:
                 return left + right
             except TypeError:
-                raise TypeClashFault(f"Cannot perform addition between {type(left).__name__} and {type(right).__name__}")
+                raise TypeClashFault(f"Cannot perform addition between '{self._luz_type_name(left)}' and '{self._luz_type_name(right)}'")
 
         elif node.op_token.type == TokenType.MINUS:
             try:
                 return left - right
             except TypeError:
-                raise IllegalOperationFault(f"Unsupported operand types for '-': {type(left).__name__} and {type(right).__name__}")
+                raise IllegalOperationFault(f"Unsupported operand types for '-': '{self._luz_type_name(left)}' and '{self._luz_type_name(right)}'")
 
         elif node.op_token.type == TokenType.MUL:
             # Allow string repetition: "ab" * 3 == "ababab" and 3 * "ab" == "ababab"
@@ -1002,7 +1002,7 @@ class Interpreter:
             try:
                 return left * right
             except TypeError:
-                raise IllegalOperationFault(f"Multiplication is not supported for {type(left).__name__} and {type(right).__name__}")
+                raise IllegalOperationFault(f"Multiplication is not supported for '{self._luz_type_name(left)}' and '{self._luz_type_name(right)}'")
 
         elif node.op_token.type == TokenType.DIV:
             # `/` always returns a float in Luz, matching the intuitive
@@ -1012,7 +1012,7 @@ class Interpreter:
             try:
                 return float(left) / float(right)
             except TypeError:
-                raise IllegalOperationFault(f"Unsupported operand types for '/': {type(left).__name__} and {type(right).__name__}")
+                raise IllegalOperationFault(f"Unsupported operand types for '/': '{self._luz_type_name(left)}' and '{self._luz_type_name(right)}'")
 
         elif node.op_token.type == TokenType.IDIV:
             # `//` truncates towards negative infinity (Python floor division).
@@ -1021,7 +1021,7 @@ class Interpreter:
             try:
                 return int(left) // int(right)
             except TypeError:
-                raise IllegalOperationFault(f"Unsupported operand types for '//': {type(left).__name__} and {type(right).__name__}")
+                raise IllegalOperationFault(f"Unsupported operand types for '//': '{self._luz_type_name(left)}' and '{self._luz_type_name(right)}'")
 
         elif node.op_token.type == TokenType.MOD:
             if right == 0:
@@ -1029,22 +1029,22 @@ class Interpreter:
             try:
                 return left % right
             except TypeError:
-                raise IllegalOperationFault(f"Unsupported operand types for '%': {type(left).__name__} and {type(right).__name__}")
+                raise IllegalOperationFault(f"Unsupported operand types for '%': '{self._luz_type_name(left)}' and '{self._luz_type_name(right)}'")
 
         elif node.op_token.type == TokenType.POW:
             try:
                 return left ** right
             except TypeError:
-                raise IllegalOperationFault(f"Unsupported operand types for '**': {type(left).__name__} and {type(right).__name__}")
+                raise IllegalOperationFault(f"Unsupported operand types for '**': '{self._luz_type_name(left)}' and '{self._luz_type_name(right)}'")
 
         elif node.op_token.type == TokenType.IN:
             if not isinstance(right, (list, str)):
-                raise TypeClashFault(f"'in' requires a list or string on the right, got {type(right).__name__}")
+                raise TypeClashFault(f"'in' requires a list or string on the right, got '{self._luz_type_name(right)}'")
             return left in right
 
         elif node.op_token.type == TokenType.NOT_IN:
             if not isinstance(right, (list, str)):
-                raise TypeClashFault(f"'not in' requires a list or string on the right, got {type(right).__name__}")
+                raise TypeClashFault(f"'not in' requires a list or string on the right, got '{self._luz_type_name(right)}'")
             return left not in right
 
         # Equality operators work across any types (mixed-type comparison just
@@ -1151,7 +1151,7 @@ class Interpreter:
         iterable = self.visit(node.iterable_node)
 
         if not isinstance(iterable, (list, str, dict)):
-            raise TypeViolationFault(f"Cannot iterate over type '{type(iterable).__name__}' — expected list, string, or dict")
+            raise TypeViolationFault(f"Cannot iterate over type '{self._luz_type_name(iterable)}' — expected list, string, or dict")
 
         previous_env = self.current_env
         self.current_env = Environment(previous_env)
@@ -1276,7 +1276,7 @@ class Interpreter:
             if isinstance(callee, (LuzFunction, LuzLambda)):
                 return callee(self, arguments, kwargs=kwargs)
 
-            raise InvalidUsageFault(f"Expression is not callable (got {type(callee).__name__})")
+            raise InvalidUsageFault(f"Expression is not callable (got '{self._luz_type_name(callee)}')")
         except LuzError as e:
             raise e
         except Exception as e:
@@ -1376,7 +1376,7 @@ class Interpreter:
         try:
             return int(len(obj))
         except TypeError:
-            raise TypeViolationFault(f"Object of type '{type(obj).__name__}' has no length")
+            raise TypeViolationFault(f"Object of type '{self._luz_type_name(obj)}' has no length")
 
     def builtin_append(self, list_obj, element):
         if not isinstance(list_obj, list):
@@ -1406,7 +1406,7 @@ class Interpreter:
             return value[::-1]
         else:
             raise TypeClashFault(
-                f"reverse() expects a list or string, got '{type(value).__name__}'"
+                f"reverse() expects a list or string, got '{self._luz_type_name(value)}'"
             )
 
     def builtin_any(self, lst):
@@ -1442,7 +1442,7 @@ class Interpreter:
         except KeyError:
             raise MemoryAccessFault(f"Key '{key}' not found in dictionary")
         except TypeError:
-            raise TypeViolationFault(f"Invalid key type: '{type(key).__name__}'")
+            raise TypeViolationFault(f"Invalid key type: '{self._luz_type_name(key)}'")
 
     # ── Type-casting built-ins ────────────────────────────────────────────────
 
@@ -1489,7 +1489,7 @@ class Interpreter:
     # before string operations, producing a consistent error message format.
     def _require_str(self, value, fname):
         if not isinstance(value, str):
-            raise ArgumentFault(f"{fname}() requires a string, got '{type(value).__name__}'")
+            raise ArgumentFault(f"{fname}() requires a string, got '{self._luz_type_name(value)}'")
 
     def builtin_trim(self, s):
         # Removes leading and trailing whitespace.
@@ -1735,7 +1735,7 @@ class Interpreter:
 
     def _require_num(self, value, fname):
         if not isinstance(value, (int, float)) or isinstance(value, bool):
-            raise ArgumentFault(f"{fname}() requires a number, got '{type(value).__name__}'")
+            raise ArgumentFault(f"{fname}() requires a number, got '{self._luz_type_name(value)}'")
 
     def builtin_abs(self, x):
         self._require_num(x, 'abs')
